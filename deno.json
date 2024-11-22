@@ -1,0 +1,19 @@
+{
+  "name": "@panth977/cache",
+  "version": "0.1.0",
+  "exports": "./mod.ts",
+  "license": "MIT",
+  "tasks": {
+    "format": "deno fmt **/*.ts",
+    "lint": "deno lint --fix"
+  },
+  "lint": {
+    "rules": {
+      "exclude": ["no-explicit-any"]
+    }
+  },
+  "fmt": {
+    "lineWidth": 150
+  },
+  "imports": { "@panth977/functions": "jsr:@panth977/functions@^0.1.2", "zod": "npm:zod@^3.23.8" }
+}
