@@ -2,6 +2,12 @@ import type { FUNCTIONS } from "@panth977/functions";
 import type { z } from "zod";
 import type { Hook } from "./hooks/_helper.ts";
 
+/**
+ * A simple wrapper, to create a cache layer.
+ * @param _params 
+ * @param behavior 
+ * @returns 
+ */
 export function Wrapper<
   I extends z.ZodType,
   O extends z.ZodType,
@@ -12,11 +18,11 @@ export function Wrapper<
   _params: FUNCTIONS.AsyncFunction._Params<I, O, S, C>,
   {
     getHook,
-    updateInfo,
+    updateInput,
     useHook,
   }: {
     getHook(context: C, input: z.infer<I>): H;
-    updateInfo(
+    updateInput(
       context: C,
       input: z.infer<I>,
       info: H extends Hook<infer Info, O> ? Info : unknown
@@ -32,7 +38,7 @@ export function Wrapper<
       const hook = getHook(context, input);
       const result = await hook.get();
       if (hook.isIncomplete(result.info)) {
-        input = updateInfo(context, input, result.info);
+        input = updateInput(context, input, result.info);
         const res_ = func(context, input);
         hook.set(res_);
         result.val = hook.merge(result.val, await res_);

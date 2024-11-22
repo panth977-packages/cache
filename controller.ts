@@ -21,12 +21,11 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
     boolean
   >
 >;
-const AllFieldsSymbol = Symbol();
+const AllFieldsSymbol: unique symbol = Symbol();
 type AllFieldsSymbol = typeof AllFieldsSymbol;
 /**
  * How a Cache Client should be, the typical APIs (methods) needed to leverage wrapper!
- */
-export abstract class AbstractCacheClient {
+ */ export abstract class AbstractCacheClient {
   readonly name: string;
   static get AllFields(): AllFieldsSymbol {
     return AllFieldsSymbol;
@@ -86,11 +85,10 @@ export abstract class AbstractCacheClient {
 
 /**
  * wrappers for {@link AbstractCacheClient} to streamline the
- */
-export class CacheController<
+ */ export class CacheController<
   T extends AbstractCacheClient = AbstractCacheClient
 > {
-  readonly separator;
+  readonly separator: string;
   readonly defaultExpiry: number;
   readonly client: T;
   readonly prefix: string;
@@ -118,7 +116,7 @@ export class CacheController<
     this.allowed = allowed;
     this.log = log;
   }
-  getKey(key: string | number) {
+  getKey(key: string | number): string {
     return `${this.prefix}${this.separator}${key}`;
   }
   can(key: keyof Actions<T>): boolean {
@@ -128,7 +126,7 @@ export class CacheController<
   /*******************************************/
 
   /* Builds */
-  setDefaultExp(exp: number) {
+  setDefaultExp(exp: number): CacheController<T> {
     return new CacheController({
       client: this.client,
       separator: this.separator,
@@ -138,7 +136,7 @@ export class CacheController<
       log: this.log,
     });
   }
-  addPrefix(prefix: string | number) {
+  addPrefix(prefix: string | number): CacheController<T> {
     return new CacheController({
       client: this.client,
       separator: this.separator,
@@ -148,7 +146,7 @@ export class CacheController<
       log: this.log,
     });
   }
-  setLogging(opt: boolean) {
+  setLogging(opt: boolean): CacheController<T> {
     return new CacheController({
       client: this.client,
       separator: this.separator,
@@ -158,7 +156,7 @@ export class CacheController<
       log: opt,
     });
   }
-  setAllowance(opt: Omit<Actions<T>, "*">) {
+  setAllowance(opt: Omit<Actions<T>, "*">): CacheController<T> {
     return new CacheController({
       client: this.client,
       separator: this.separator,
