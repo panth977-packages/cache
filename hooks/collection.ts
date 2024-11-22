@@ -233,15 +233,15 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
  *             params.output,
  *             input.map(x => ({id: x.orgId, subIds: x.userIds}))
  *           ),
- *         updateInfo: (_context, _input, info) => info.map(x => ({
+ *         updateInfo: (_context, _input, info) => info.filter(x => x.notFound.length).map(x => ({
  *             orgId: x.id,
  *             userIds: x.notFound,
  *             ignoreUserId: x.found,
  *         })),
  *       }),
  *     ],
- *     async func(context, {orgId, userIds, ignoreUserId}) {
- *       if (!userIds.length) return {};
+ *     async func(context, input) {
+ *       if (!input.length) return {};
  *       const result = await pg.query(YourOptimizedQuery);
  *       const users = result.rows;
  *       return TOOLS.oneToOneToOneMapping(users, 'orgId', 'userId');
