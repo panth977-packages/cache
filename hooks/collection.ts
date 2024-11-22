@@ -6,6 +6,7 @@ import type { FUNCTIONS } from "@panth977/functions";
 import type { z } from "zod";
 import type {
   AbstractCacheClient,
+  AllFields,
   CacheController,
   KEY,
 } from "../controller.ts";
@@ -17,12 +18,12 @@ import {
 } from "./_helper.ts";
 export type SingleCollectionInfo<SubId extends KEY> = {
   found: SubId[];
-  notFound: "*" | SubId[];
+  notFound: AllFields | SubId[];
 };
 export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
   id: Id;
   found: SubId[];
-  notFound: "*" | SubId[];
+  notFound: AllFields | SubId[];
 }[];
 
 /**
@@ -79,12 +80,12 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
   readonly cache: CacheController<A>;
   readonly schema: O;
   readonly subIdSchema: SubId;
-  readonly subIds: z.infer<SubId>[] | "*";
+  readonly subIds: z.infer<SubId>[] | AllFields;
   constructor(
     context: FUNCTIONS.Context,
     cache: CacheController<A>,
     schema: z.ZodRecord<SubId, O>,
-    subIds: z.infer<SubId>[] | "*"
+    subIds: z.infer<SubId>[] | AllFields
   ) {
     if (Array.isArray(subIds)) {
       if (subIds.includes("$")) {
@@ -261,12 +262,12 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
   readonly schema: O;
   readonly idSchema: Id;
   readonly subIdSchema: SubId;
-  readonly locs: { id: z.infer<Id>; subIds: z.infer<SubId>[] | "*" }[];
+  readonly locs: { id: z.infer<Id>; subIds: z.infer<SubId>[] | AllFields }[];
   constructor(
     context: FUNCTIONS.Context,
     cache: CacheController<A>,
     schema: z.ZodRecord<Id, z.ZodRecord<SubId, O>>,
-    locs: { id: z.infer<Id>; subIds: z.infer<SubId>[] | "*" }[]
+    locs: { id: z.infer<Id>; subIds: z.infer<SubId>[] | AllFields }[]
   ) {
     if (new Set(locs.map((x) => x.id)).size !== locs.length) {
       throw new Error("Same [id] was passed more than once");

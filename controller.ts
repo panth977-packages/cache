@@ -1,5 +1,6 @@
 import type { FUNCTIONS } from "@panth977/functions";
 export type KEY = string | number;
+export type AllFields = "*";
 type Any = any;
 type ExtendedFunc<P, R> = (
   context: FUNCTIONS.Context,
@@ -36,7 +37,7 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
   abstract existsHashFields(
     context: FUNCTIONS.Context,
     key: KEY,
-    fields: KEY[] | "*",
+    fields: KEY[] | AllFields,
     log?: boolean
   ): Promise<Record<string, boolean>>;
   abstract readKey<T>(
@@ -47,7 +48,7 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
   abstract readHashFields<T extends Record<string, unknown>>(
     context: FUNCTIONS.Context,
     key: KEY,
-    fields: KEY[] | "*",
+    fields: KEY[] | AllFields,
     log?: boolean
   ): Promise<Partial<T>>;
   abstract writeKey<T>(
@@ -72,7 +73,7 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
   abstract removeHashFields(
     context: FUNCTIONS.Context,
     key: KEY,
-    fields: KEY[] | "*",
+    fields: KEY[] | AllFields,
     log?: boolean
   ): Promise<void>;
 }
@@ -173,14 +174,14 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
   }
   async existsHashFields(
     context: FUNCTIONS.Context,
-    params: { key?: KEY; fields?: KEY[] | "*" }
+    params: { key?: KEY; fields?: KEY[] | AllFields }
   ): Promise<Record<KEY, boolean>> {
     if (!this.can("exists")) return {};
     const result = await this.client
       .existsHashFields(
         context,
         this.getKey(`${params.key ?? ""}`),
-        params.fields ?? '*',
+        params.fields ?? "*",
         this.log
       )
       .catch(() => ({}));
@@ -198,14 +199,14 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
   }
   async readHashFields<T extends Record<KEY, unknown>>(
     context: FUNCTIONS.Context,
-    params: { key?: KEY; fields?: KEY[] | "*" }
+    params: { key?: KEY; fields?: KEY[] | AllFields }
   ): Promise<Partial<T>> {
     if (!this.can("read")) return {};
     const result = await this.client
       .readHashFields<T>(
         context,
         this.getKey(`${params.key ?? ""}`),
-        params.fields ?? '*',
+        params.fields ?? "*",
         this.log
       )
       .catch(() => ({}));
@@ -252,14 +253,14 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
   }
   async removeHashFields(
     context: FUNCTIONS.Context,
-    params: { key?: KEY; fields?: KEY[] | "*" }
+    params: { key?: KEY; fields?: KEY[] | AllFields }
   ): Promise<void> {
     if (!this.can("remove")) return;
     await this.client
       .removeHashFields(
         context,
         this.getKey(`${params.key ?? ""}`),
-        params.fields ?? '*',
+        params.fields ?? "*",
         this.log
       )
       .catch(() => ({}));
