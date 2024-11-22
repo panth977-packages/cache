@@ -74,13 +74,13 @@ type AllFieldsSymbol = typeof AllFieldsSymbol;
     context: FUNCTIONS.Context,
     key: KEY,
     log?: boolean
-  ): Promise<unknown>;
+  ): Promise<void>;
   abstract removeHashFields(
     context: FUNCTIONS.Context,
     key: KEY,
     fields: KEY[] | AllFieldsSymbol,
     log?: boolean
-  ): Promise<Record<string, unknown>>;
+  ): Promise<void>;
 }
 
 /**
