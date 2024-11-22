@@ -1,6 +1,5 @@
 import type { FUNCTIONS } from "@panth977/functions";
 export type KEY = string | number;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Any = any;
 type ExtendedFunc<P, R> = (
   context: FUNCTIONS.Context,
@@ -21,15 +20,10 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
     boolean
   >
 >;
-const AllFieldsSymbol: unique symbol = Symbol();
-type AllFieldsSymbol = typeof AllFieldsSymbol;
 /**
  * How a Cache Client should be, the typical APIs (methods) needed to leverage wrapper!
  */ export abstract class AbstractCacheClient {
   readonly name: string;
-  static get AllFields(): AllFieldsSymbol {
-    return AllFieldsSymbol;
-  }
   constructor(name: string) {
     this.name = name;
   }
@@ -42,7 +36,7 @@ type AllFieldsSymbol = typeof AllFieldsSymbol;
   abstract existsHashFields(
     context: FUNCTIONS.Context,
     key: KEY,
-    fields: KEY[] | AllFieldsSymbol,
+    fields: KEY[] | "*",
     log?: boolean
   ): Promise<Record<string, boolean>>;
   abstract readKey<T>(
@@ -53,7 +47,7 @@ type AllFieldsSymbol = typeof AllFieldsSymbol;
   abstract readHashFields<T extends Record<string, unknown>>(
     context: FUNCTIONS.Context,
     key: KEY,
-    fields: KEY[] | AllFieldsSymbol,
+    fields: KEY[] | "*",
     log?: boolean
   ): Promise<Partial<T>>;
   abstract writeKey<T>(
@@ -78,7 +72,7 @@ type AllFieldsSymbol = typeof AllFieldsSymbol;
   abstract removeHashFields(
     context: FUNCTIONS.Context,
     key: KEY,
-    fields: KEY[] | AllFieldsSymbol,
+    fields: KEY[] | "*",
     log?: boolean
   ): Promise<void>;
 }
@@ -186,8 +180,7 @@ type AllFieldsSymbol = typeof AllFieldsSymbol;
       .existsHashFields(
         context,
         this.getKey(`${params.key ?? ""}`),
-        (params.fields === "*" ? undefined : params.fields) ??
-          AbstractCacheClient.AllFields,
+        params.fields ?? '*',
         this.log
       )
       .catch(() => ({}));
@@ -212,8 +205,7 @@ type AllFieldsSymbol = typeof AllFieldsSymbol;
       .readHashFields<T>(
         context,
         this.getKey(`${params.key ?? ""}`),
-        (params.fields === "*" ? undefined : params.fields) ??
-          AbstractCacheClient.AllFields,
+        params.fields ?? '*',
         this.log
       )
       .catch(() => ({}));
@@ -267,8 +259,7 @@ type AllFieldsSymbol = typeof AllFieldsSymbol;
       .removeHashFields(
         context,
         this.getKey(`${params.key ?? ""}`),
-        (params.fields === "*" ? undefined : params.fields) ??
-          AbstractCacheClient.AllFields,
+        params.fields ?? '*',
         this.log
       )
       .catch(() => ({}));

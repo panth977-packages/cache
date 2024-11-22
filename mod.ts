@@ -14,7 +14,7 @@
  * 
  * @example
  * ```ts
- * import { CACHE } from "@panth977/CACHE";
+ * import { CACHE } from "@panth977/cache";
  *
  * CACHE.[api];
  * ```
