@@ -4,9 +4,9 @@ import type { Hook } from "./hooks/_helper.ts";
 
 /**
  * A simple wrapper, to create a cache layer.
- * @param _params 
- * @param behavior 
- * @returns 
+ * @param _params
+ * @param behavior
+ * @returns
  */
 export function Wrapper<
   I extends z.ZodType,
@@ -16,11 +16,7 @@ export function Wrapper<
   H extends Hook<any, O>
 >(
   _params: FUNCTIONS.AsyncFunction._Params<I, O, S, C>,
-  {
-    getHook,
-    updateInput,
-    useHook,
-  }: {
+  behavior: {
     getHook(context: C, input: z.infer<I>): H;
     updateInput(
       context: C,
@@ -30,15 +26,18 @@ export function Wrapper<
     useHook?(hook: (context: C, input: z.infer<I>) => H): void;
   }
 ): FUNCTIONS.AsyncFunction.WrapperBuild<I, O, S, C> & {
-  getHook: typeof getHook;
+  getHook(context: C, input: z.infer<I>): H;
 } {
-  useHook?.(getHook);
+  function getHook(context: C, input: z.infer<I>): H {
+    return behavior.getHook(context, input);
+  }
+  behavior.useHook?.(behavior.getHook);
   const Wrapper: FUNCTIONS.AsyncFunction.WrapperBuild<I, O, S, C> =
     async function (context, input, func) {
       const hook = getHook(context, input);
       const result = await hook.get();
       if (hook.isIncomplete(result.info)) {
-        input = updateInput(context, input, result.info);
+        input = behavior.updateInput(context, input, result.info);
         const res_ = func(context, input);
         hook.set(res_);
         result.val = hook.merge(result.val, await res_);
