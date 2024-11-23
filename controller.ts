@@ -61,7 +61,7 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
   abstract writeHashFields<T extends Record<string, unknown>>(
     context: FUNCTIONS.Context,
     key: KEY,
-    value: T | Promise<T>,
+    value: Promise<T> | { [k in keyof T]: Promise<T[k]> | T[k] },
     expire: number,
     log?: boolean
   ): Promise<void>;

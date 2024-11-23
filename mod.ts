@@ -10,6 +10,9 @@
  * - {@link CACHE.HOOKS.SingleCollection}
  * - {@link CACHE.HOOKS.MultipleCollection}
  * 
+ * # Client
+ * - {@link CACHE.CacheController}
+ * 
  * @module
  * 
  * @example
