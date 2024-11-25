@@ -46,7 +46,7 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
  *           params.output,
  *           userIds
  *         ),
- *       updateInfo: (_context, { orgId }, info) => ({
+ *       updateInput: (_context, { orgId }, info) => ({
  *         userIds: info.notFound,
  *         ignoreUserId: info.found,
  *         orgId,
@@ -234,7 +234,7 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
  *             params.output,
  *             input.map(x => ({id: x.orgId, subIds: x.userIds}))
  *           ),
- *         updateInfo: (_context, _input, info) => info.filter(x => x.notFound.length).map(x => ({
+ *         updateInput: (_context, _input, info) => info.filter(x => x.notFound.length).map(x => ({
  *             orgId: x.id,
  *             userIds: x.notFound,
  *             ignoreUserId: x.found,

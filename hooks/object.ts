@@ -30,7 +30,7 @@ export type MultipleObjectInfo<Id extends KEY> = { id: Id; found: boolean }[];
  *           cache.addPrefix(`UserId:${userId}`),
  *           params.output
  *         ),
- *       updateInfo: (_context, {userId}, _info) => ({userId}),
+ *       updateInput: (_context, {userId}, _info) => ({userId}),
  *     }),
  *   ],
  *   async func(context, {userId}) {
@@ -112,7 +112,7 @@ export type MultipleObjectInfo<Id extends KEY> = { id: Id; found: boolean }[];
  *           params.output,
  *           userIds
  *         ),
- *       updateInfo: (_context, _input, info) => ({ userIds: info }),
+ *       updateInput: (_context, _input, info) => ({ userIds: info }),
  *       useHook(Hooks) {
  *         // UPDATE OR DELETE CACHE
  *         const hook = Hooks(context, { userIds: [user.id] });
