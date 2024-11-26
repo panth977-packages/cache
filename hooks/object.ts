@@ -32,11 +32,11 @@ export type MultipleObjectInfo<Id extends KEY> = {
  *   wrappers: (params) => [
  *     CACHE.Wrapper(params, {
  *       getHook: (context, {userId}) =>
- *         new CACHE.HOOKS.SingleObject(
+ *         new CACHE.HOOKS.SingleObject({
  *           context,
- *           cache.addPrefix(`UserId:${userId}`),
- *           params.output
- *         ),
+ *           cache: cache.addPrefix(`UserId:${userId}`),
+ *           schema: params.output
+ *         }),
  *       updateInput: (_context, {userId}, _info) => ({userId}),
  *     }),
  *   ],
@@ -58,11 +58,15 @@ export type MultipleObjectInfo<Id extends KEY> = {
 > extends Hook<SingleObjectInfo, O> {
   readonly cache: CacheController<A>;
   readonly schema: O;
-  constructor(
-    context: FUNCTIONS.Context,
-    cache: CacheController<A>,
-    schema: O
-  ) {
+  constructor({
+    cache,
+    context,
+    schema,
+  }: {
+    context: FUNCTIONS.Context;
+    cache: CacheController<A>;
+    schema: O;
+  }) {
     super(context);
     this.cache = cache;
     this.schema = schema;
@@ -113,12 +117,12 @@ export type MultipleObjectInfo<Id extends KEY> = {
  *   wrappers: (params) => [
  *     CACHE.Wrapper(params, {
  *       getHook: (context, { userIds }) =>
- *         new CACHE.HOOKS.MultipleObject(
+ *         new CACHE.HOOKS.MultipleObject({
  *           context,
- *           cache.addPrefix(`UserId`),
- *           params.output,
- *           userIds
- *         ),
+ *           cache: cache.addPrefix(`UserId`),
+ *           schema: params.output,
+ *           ids: userIds
+ *         }),
  *       updateInput: (_context, _input, info) => ({ userIds: info }),
  *       useHook(Hooks) {
  *         // UPDATE OR DELETE CACHE
@@ -144,12 +148,17 @@ export type MultipleObjectInfo<Id extends KEY> = {
   readonly schema: O;
   readonly idSchema: Id;
   readonly ids: z.infer<Id>[];
-  constructor(
-    context: FUNCTIONS.Context,
-    cache: CacheController<A>,
-    schema: z.ZodRecord<Id, O>,
-    ids: z.infer<Id>[]
-  ) {
+  constructor({
+    context,
+    cache,
+    schema,
+    ids,
+  }: {
+    context: FUNCTIONS.Context;
+    cache: CacheController<A>;
+    schema: z.ZodRecord<Id, O>;
+    ids: z.infer<Id>[];
+  }) {
     super(context);
     this.cache = cache;
     this.schema = schema.valueSchema;

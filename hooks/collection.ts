@@ -40,12 +40,12 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
  *   wrappers: (params) => [
  *     CACHE.Wrapper(params, {
  *       getHook: (context, { orgId, userIds }) =>
- *         new CACHE.HOOKS.SingleCollection(
+ *         new CACHE.HOOKS.SingleCollection({
  *           context,
- *           cache.addPrefix(`OrgId:${orgId}:UserId`),
- *           params.output,
- *           userIds
- *         ),
+ *           cache: cache.addPrefix(`OrgId:${orgId}:UserId`),
+ *           schema: params.output,
+ *           subIds: userIds
+ *         }),
  *       updateInput: (_context, { orgId }, info) => ({
  *         userIds: info.notFound,
  *         ignoreUserId: info.found,
@@ -81,12 +81,17 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
   readonly schema: O;
   readonly subIdSchema: SubId;
   readonly subIds: z.infer<SubId>[] | AllFields;
-  constructor(
-    context: FUNCTIONS.Context,
-    cache: CacheController<A>,
-    schema: z.ZodRecord<SubId, O>,
-    subIds: z.infer<SubId>[] | AllFields
-  ) {
+  constructor({
+    context,
+    cache,
+    schema,
+    subIds,
+  }: {
+    context: FUNCTIONS.Context;
+    cache: CacheController<A>;
+    schema: z.ZodRecord<SubId, O>;
+    subIds: z.infer<SubId>[] | AllFields;
+  }) {
     if (Array.isArray(subIds)) {
       if (subIds.includes("$")) {
         throw new Error("Cannot use subId [$] as it is reserved keyword!");
@@ -228,12 +233,12 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
  *     wrappers: (params) => [
  *       CACHE.Wrapper(params, {
  *         getHook: (context, input) =>
- *           new CACHE.HOOKS.MultipleCollection(
+ *           new CACHE.HOOKS.MultipleCollection({
  *             context,
- *             cache.addPrefix(`OrgId`),
- *             params.output,
- *             input.map(x => ({id: x.orgId, subIds: x.userIds}))
- *           ),
+ *             cache: cache.addPrefix(`OrgId`),
+ *             schema: params.output,
+ *             locs: input.map(x => ({id: x.orgId, subIds: x.userIds}))
+ *           }),
  *         updateInput: (_context, _input, info) => info.filter(x => x.notFound.length).map(x => ({
  *             orgId: x.id,
  *             userIds: x.notFound,
@@ -263,12 +268,17 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
   readonly idSchema: Id;
   readonly subIdSchema: SubId;
   readonly locs: { id: z.infer<Id>; subIds: z.infer<SubId>[] | AllFields }[];
-  constructor(
-    context: FUNCTIONS.Context,
-    cache: CacheController<A>,
-    schema: z.ZodRecord<Id, z.ZodRecord<SubId, O>>,
-    locs: { id: z.infer<Id>; subIds: z.infer<SubId>[] | AllFields }[]
-  ) {
+  constructor({
+    context,
+    cache,
+    schema,
+    locs,
+  }: {
+    context: FUNCTIONS.Context;
+    cache: CacheController<A>;
+    schema: z.ZodRecord<Id, z.ZodRecord<SubId, O>>;
+    locs: { id: z.infer<Id>; subIds: z.infer<SubId>[] | AllFields }[];
+  }) {
     if (new Set(locs.map((x) => x.id)).size !== locs.length) {
       throw new Error("Same [id] was passed more than once");
     }
