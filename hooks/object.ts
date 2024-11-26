@@ -4,7 +4,11 @@
  */
 import type { z } from "zod";
 import type { FUNCTIONS } from "@panth977/functions";
-import type { AbstractCacheClient, CacheController, KEY } from "../controller.ts";
+import type {
+  AbstractCacheClient,
+  CacheController,
+  KEY,
+} from "../controller.ts";
 import {
   bundleCached,
   extractFromPromise,
@@ -14,7 +18,10 @@ import {
 } from "./_helper.ts";
 
 export type SingleObjectInfo = { found: boolean };
-export type MultipleObjectInfo<Id extends KEY> = { id: Id; found: boolean }[];
+export type MultipleObjectInfo<Id extends KEY> = {
+  found: Id[];
+  notFound: Id[];
+};
 /**
  * @example
  *
@@ -150,10 +157,7 @@ export type MultipleObjectInfo<Id extends KEY> = { id: Id; found: boolean }[];
     this.ids = ids;
   }
   override isIncomplete(info: MultipleObjectInfo<z.infer<Id>>): boolean {
-    for (const e of info) {
-      if (!e.found) return true;
-    }
-    return false;
+    return info.notFound.length !== 0;
   }
   override async exists(): Promise<MultipleObjectInfo<z.infer<Id>>> {
     const info = await Promise.all(
@@ -163,7 +167,10 @@ export type MultipleObjectInfo<Id extends KEY> = { id: Id; found: boolean }[];
           .then((exists) => ({ id, found: exists }))
       )
     );
-    return info;
+    return {
+      found: info.filter((x) => x.found).map((x) => x.id),
+      notFound: info.filter((x) => !x.found).map((x) => x.id),
+    };
   }
   override async get(safe?: boolean): Promise<{
     val: Record<z.infer<Id>, O["_output"]>;
@@ -181,8 +188,13 @@ export type MultipleObjectInfo<Id extends KEY> = { id: Id; found: boolean }[];
         if (val[id] === undefined) delete val[id];
       }
     }
-    const info = this.ids.map((id) => ({ id, found: val[id] !== undefined }));
-    return { val, info: info };
+    return {
+      val,
+      info: {
+        found: this.ids.filter((id) => val[id] !== undefined),
+        notFound: this.ids.filter((id) => val[id] === undefined),
+      },
+    };
   }
   override async set(
     output: SyncOrPromise<Record<z.infer<Id>, O["_output"]>>,
@@ -197,7 +209,7 @@ export type MultipleObjectInfo<Id extends KEY> = { id: Id; found: boolean }[];
     }
     if (ifExists) {
       const data = await this.exists();
-      for (const x of data) if (!x.found) delete recordedOutput[x.id];
+      for (const x of data.notFound) delete recordedOutput[x];
     }
     await Promise.all(
       Object.keys(recordedOutput).map((x) =>
