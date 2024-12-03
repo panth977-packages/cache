@@ -37,28 +37,29 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
  *     ignoreUserId: z.number().array().optional()
  *   }),
  *   output: z.record(z.number(), z.object({ id: z.number(), name: z.string(), address: z.string() })),
- *   wrappers: (params) => [
- *     CACHE.Wrapper(params, {
- *       getHook: (context, { orgId, userIds }) =>
+ *   wrappers: (_params) => [
+ *     CACHE.Wrapper({
+ *       _params,
+ *       getHook: ({context, input: { orgId, userIds }}) =>
  *         new CACHE.HOOKS.SingleCollection({
  *           context,
  *           cache: cache.addPrefix(`OrgId:${orgId}:UserId`),
- *           schema: params.output,
+ *           schema: _params.output,
  *           subIds: userIds
  *         }),
- *       updateInput: (_context, { orgId }, info) => ({
+ *       updateInput: ({input: { orgId }, info}) => ({
  *         userIds: info.notFound,
  *         ignoreUserId: info.found,
  *         orgId,
  *       }),
  *       useHook(Hooks) {
- *         const hook = Hooks(context, { userIds: '*' });
- *         await hook.set({ [user.id]: { id: user.id, name: user.name, address: user.address } });
- *         await hook.del();
+ *         const hook = Hooks({context, input: { userIds: '*' }});
+ *         await hook.set({output: { [user.id]: { id: user.id, name: user.name, address: user.address } }});
+ *         await hook.del({});
  *       },
  *     }),
  *   ],
- *   async func(context, {orgId, userIds, ignoreUserId}) {
+ *   async func({context, input: {orgId, userIds, ignoreUserId}}) {
  *     if (!userIds.length) return {};
  *     const result = await pg.query(`
  *         SELECT id, name, address
@@ -106,11 +107,16 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
     this.subIdSchema = schema.keySchema;
     this.subIds = subIds;
   }
-  override isIncomplete(info: SingleCollectionInfo<z.infer<SubId>>): boolean {
+  override isIncomplete({
+    info,
+  }: {
+    info: SingleCollectionInfo<z.infer<SubId>>;
+  }): boolean {
     return info.notFound === "*" || info.notFound.length !== 0;
   }
   override async exists(): Promise<SingleCollectionInfo<z.infer<SubId>>> {
-    const { $, ...res } = await this.cache.existsHashFields(this.context, {
+    const { $, ...res } = await this.cache.existsHashFields({
+      context: this.context,
       fields: this.subIds,
     });
     const found =
@@ -125,11 +131,12 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
       this.subIds !== "*" ? this.subIds.filter((x) => !res[x]) : $ ? [] : "*";
     return { found, notFound };
   }
-  override async get(safe?: boolean): Promise<{
+  override async get({ safe }: { safe?: boolean }): Promise<{
     val: Record<z.infer<SubId>, O["_output"]>;
     info: SingleCollectionInfo<z.infer<SubId>>;
   }> {
-    const res = await this.cache.readHashFields(this.context, {
+    const res = await this.cache.readHashFields({
+      context: this.context,
       fields: this.subIds,
     });
     let $: any = res.$;
@@ -160,10 +167,13 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
         : "*";
     return { val, info: { found, notFound } };
   }
-  override async set(
-    output: SyncOrPromise<Record<z.infer<SubId>, O["_output"]>>,
-    ifExists?: boolean
-  ): Promise<void> {
+  override async set({
+    output,
+    ifExists,
+  }: {
+    output: SyncOrPromise<Record<z.infer<SubId>, O["_output"]>>;
+    ifExists?: boolean;
+  }): Promise<void> {
     let recordedOutput: Record<KEY, SyncOrPromise<z.infer<O>>> = {};
     if (this.subIds !== "*") {
       if (output instanceof Promise) {
@@ -179,7 +189,7 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
       const data = await this.exists();
       if (this.subIds === "*") {
         if (data.notFound === "*") {
-          await this.cache.removeHashFields(this.context, {});
+          await this.cache.removeHashFields({ context: this.context });
           return;
         }
       } else {
@@ -188,28 +198,36 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
       }
     }
     if (this.subIds === "*") {
-      await this.cache.removeHashFields(this.context, {});
+      await this.cache.removeHashFields({ context: this.context });
       const awaitedOutput = await output;
-      await this.cache.writeHashFields(this.context, {
+      await this.cache.writeHashFields({
+        context: this.context,
         value: { ...awaitedOutput, $: "*" },
       });
     } else {
-      await this.cache.writeHashFields(this.context, { value: recordedOutput });
+      await this.cache.writeHashFields({
+        context: this.context,
+        value: recordedOutput,
+      });
     }
   }
   override async del() {
     if (this.subIds === "*") {
-      await this.cache.removeHashFields(this.context, {});
+      await this.cache.removeHashFields({ context: this.context });
     } else {
-      await this.cache.removeHashFields(this.context, {
+      await this.cache.removeHashFields({
+        context: this.context,
         fields: [...this.subIds, "$"],
       });
     }
   }
-  override merge(
-    target: Record<z.infer<SubId>, O["_output"]>,
-    extension: Record<z.infer<SubId>, O["_output"]>
-  ): Record<z.infer<SubId>, O["_output"]> {
+  override merge({
+    extension,
+    target,
+  }: {
+    target: Record<z.infer<SubId>, O["_output"]>;
+    extension: Record<z.infer<SubId>, O["_output"]>;
+  }): Record<z.infer<SubId>, O["_output"]> {
     return Object.assign(target, extension);
   }
 }
@@ -230,13 +248,14 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
  *         z.object({ orgId: z.string(), userId: z.number(), name: z.string(), address: z.string() })
  *       )
  *     ),
- *     wrappers: (params) => [
- *       CACHE.Wrapper(params, {
+ *     wrappers: (_params) => [
+ *       CACHE.Wrapper({
+ *         _params,
  *         getHook: (context, input) =>
  *           new CACHE.HOOKS.MultipleCollection({
  *             context,
  *             cache: cache.addPrefix(`OrgId`),
- *             schema: params.output,
+ *             schema: _params.output,
  *             locs: input.map(x => ({id: x.orgId, subIds: x.userIds}))
  *           }),
  *         updateInput: (_context, _input, info) => info.filter(x => x.notFound.length).map(x => ({
@@ -299,9 +318,11 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
     this.schema = schema.valueSchema.valueSchema;
     this.locs = locs;
   }
-  override isIncomplete(
-    info: MultipleCollectionInfo<z.infer<Id>, z.infer<SubId>>
-  ): boolean {
+  override isIncomplete({
+    info,
+  }: {
+    info: MultipleCollectionInfo<z.infer<Id>, z.infer<SubId>>;
+  }): boolean {
     for (const e of info) {
       if (e.notFound === "*" || e.notFound.length !== 0) return true;
     }
@@ -313,7 +334,11 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
     const info = await Promise.all(
       this.locs.map((x) =>
         this.cache
-          .existsHashFields(this.context, { key: x.id, fields: x.subIds })
+          .existsHashFields({
+            context: this.context,
+            key: x.id,
+            fields: x.subIds,
+          })
           .then(({ $, ...res }) => ({
             id: x.id,
             found:
@@ -335,13 +360,17 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
     );
     return info;
   }
-  override async get(safe?: boolean): Promise<{
+  override async get({ safe }: { safe?: boolean }): Promise<{
     val: Record<z.infer<Id>, Record<z.infer<SubId>, O["_output"]>>;
     info: MultipleCollectionInfo<z.infer<Id>, z.infer<SubId>>;
   }> {
     const res = await Promise.all(
       this.locs.map((x) =>
-        this.cache.readHashFields(this.context, { key: x.id, fields: x.subIds })
+        this.cache.readHashFields({
+          context: this.context,
+          key: x.id,
+          fields: x.subIds,
+        })
       )
     );
     const val = bundleCached(
@@ -381,12 +410,15 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
     }));
     return { val, info };
   }
-  override async set(
+  override async set({
+    output,
+    ifExists,
+  }: {
     output: SyncOrPromise<
       Record<z.infer<Id>, Record<z.infer<SubId>, O["_output"]>>
-    >,
-    ifExists?: boolean
-  ): Promise<void> {
+    >;
+    ifExists?: boolean;
+  }): Promise<void> {
     const fullOutput: Record<KEY, SyncOrPromise<Record<KEY, z.infer<O>>>> = {};
     const partialOutput: Record<
       KEY,
@@ -428,7 +460,7 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
       }
       await Promise.all(
         needToDel.map((x) =>
-          this.cache.removeHashFields(this.context, { key: x })
+          this.cache.removeHashFields({ context: this.context, key: x })
         )
       );
     }
@@ -437,7 +469,8 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
         this.locs
           .filter((x) => x.subIds !== "*")
           .map((x) =>
-            this.cache.writeHashFields(this.context, {
+            this.cache.writeHashFields({
+              context: this.context,
               key: x.id,
               value: partialOutput[x.id],
             })
@@ -452,7 +485,8 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
         .then((res) =>
           Promise.all(
             Object.keys(res).map((x) =>
-              this.cache.writeHashFields(this.context, {
+              this.cache.writeHashFields({
+                context: this.context,
                 key: x,
                 value: { ...res[x], $: "*" },
               })
@@ -464,17 +498,21 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
   override async del(): Promise<void> {
     await Promise.all(
       this.locs.map((x) =>
-        this.cache.removeHashFields(this.context, {
+        this.cache.removeHashFields({
+          context: this.context,
           key: x.id,
           fields: x.subIds,
         })
       )
     );
   }
-  override merge(
-    target: Record<z.infer<Id>, Record<z.infer<SubId>, O["_output"]>>,
-    extension: Record<z.infer<Id>, Record<z.infer<SubId>, O["_output"]>>
-  ): Record<z.infer<Id>, Record<z.infer<SubId>, O["_output"]>> {
+  override merge({
+    extension,
+    target,
+  }: {
+    target: Record<z.infer<Id>, Record<z.infer<SubId>, O["_output"]>>;
+    extension: Record<z.infer<Id>, Record<z.infer<SubId>, O["_output"]>>;
+  }): Record<z.infer<Id>, Record<z.infer<SubId>, O["_output"]>> {
     for (const id in extension) {
       Object.assign(
         (target[id as z.infer<Id>] ??= {} as Record<

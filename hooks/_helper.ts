@@ -28,13 +28,18 @@ export abstract class Hook<Info, O extends z.ZodType> {
   constructor(context: FUNCTIONS.Context) {
     this.context = context;
   }
-  abstract isIncomplete(info: Info): boolean;
-  abstract exists(): Promise<Info>;
-  abstract get(safe?: boolean): Promise<{ val: z.infer<O>; info: Info }>;
-  abstract set(
-    output: SyncOrPromise<z.infer<O>>,
-    ifExists?: boolean
-  ): Promise<void>;
-  abstract del(): Promise<void>;
-  abstract merge(target: z.infer<O>, extension: z.infer<O>): z.infer<O>;
+  abstract isIncomplete(arg: { info: Info }): boolean;
+  abstract exists(arg: Record<never, never>): Promise<Info>;
+  abstract get(arg: {
+    safe?: boolean;
+  }): Promise<{ val: z.infer<O>; info: Info }>;
+  abstract set(arg: {
+    output: SyncOrPromise<z.infer<O>>;
+    ifExists?: boolean;
+  }): Promise<void>;
+  abstract del(arg: Record<never, never>): Promise<void>;
+  abstract merge(arg: {
+    target: z.infer<O>;
+    extension: z.infer<O>;
+  }): z.infer<O>;
 }

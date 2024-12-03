@@ -2,11 +2,11 @@ import type { FUNCTIONS } from "@panth977/functions";
 export type KEY = string | number;
 export type AllFields = "*";
 type Any = any;
-type ExtendedFunc<P, R> = (
-  context: FUNCTIONS.Context,
-  controller: CacheController | null,
-  params: P
-) => R;
+type ExtendedFunc<P, R> = (arg: {
+  context: FUNCTIONS.Context;
+  controller: CacheController | null;
+  params: P;
+}) => R;
 type ExtendedFuncNames<T extends AbstractCacheClient> = {
   [K in keyof T]: T[K] extends ExtendedFunc<Any, Any> ? K : never;
 }[keyof T];
@@ -29,53 +29,53 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
     this.name = name;
   }
 
-  abstract existsKey(
-    context: FUNCTIONS.Context,
-    key: KEY,
-    log?: boolean
-  ): Promise<boolean>;
-  abstract existsHashFields(
-    context: FUNCTIONS.Context,
-    key: KEY,
-    fields: KEY[] | AllFields,
-    log?: boolean
-  ): Promise<Record<string, boolean>>;
-  abstract readKey<T>(
-    context: FUNCTIONS.Context,
-    key: KEY,
-    log?: boolean
-  ): Promise<T | undefined>;
-  abstract readHashFields<T extends Record<string, unknown>>(
-    context: FUNCTIONS.Context,
-    key: KEY,
-    fields: KEY[] | AllFields,
-    log?: boolean
-  ): Promise<Partial<T>>;
-  abstract writeKey<T>(
-    context: FUNCTIONS.Context,
-    key: KEY,
-    value: T | Promise<T>,
-    expire: number,
-    log?: boolean
-  ): Promise<void>;
-  abstract writeHashFields<T extends Record<string, unknown>>(
-    context: FUNCTIONS.Context,
-    key: KEY,
-    value: Promise<T> | { [k in keyof T]: Promise<T[k]> | T[k] },
-    expire: number,
-    log?: boolean
-  ): Promise<void>;
-  abstract removeKey(
-    context: FUNCTIONS.Context,
-    key: KEY,
-    log?: boolean
-  ): Promise<void>;
-  abstract removeHashFields(
-    context: FUNCTIONS.Context,
-    key: KEY,
-    fields: KEY[] | AllFields,
-    log?: boolean
-  ): Promise<void>;
+  abstract existsKey(arg: {
+    context: FUNCTIONS.Context;
+    key: KEY;
+    log?: boolean;
+  }): Promise<boolean>;
+  abstract existsHashFields(arg: {
+    context: FUNCTIONS.Context;
+    key: KEY;
+    fields: KEY[] | AllFields;
+    log?: boolean;
+  }): Promise<Record<string, boolean>>;
+  abstract readKey<T>(arg: {
+    context: FUNCTIONS.Context;
+    key: KEY;
+    log?: boolean;
+  }): Promise<T | undefined>;
+  abstract readHashFields<T extends Record<string, unknown>>(arg: {
+    context: FUNCTIONS.Context;
+    key: KEY;
+    fields: KEY[] | AllFields;
+    log?: boolean;
+  }): Promise<Partial<T>>;
+  abstract writeKey<T>(arg: {
+    context: FUNCTIONS.Context;
+    key: KEY;
+    value: T | Promise<T>;
+    expire: number;
+    log?: boolean;
+  }): Promise<void>;
+  abstract writeHashFields<T extends Record<string, unknown>>(arg: {
+    context: FUNCTIONS.Context;
+    key: KEY;
+    value: Promise<T> | { [k in keyof T]: Promise<T[k]> | T[k] };
+    expire: number;
+    log?: boolean;
+  }): Promise<void>;
+  abstract removeKey(arg: {
+    context: FUNCTIONS.Context;
+    key: KEY;
+    log?: boolean;
+  }): Promise<void>;
+  abstract removeHashFields(arg: {
+    context: FUNCTIONS.Context;
+    key: KEY;
+    fields: KEY[] | AllFields;
+    log?: boolean;
+  }): Promise<void>;
 }
 
 /**
@@ -162,119 +162,166 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
     });
   }
   /* Controllers */
-  async existsKey(
-    context: FUNCTIONS.Context,
-    params: { key?: KEY }
-  ): Promise<boolean> {
+  async existsKey({
+    context,
+    ...params
+  }: {
+    context: FUNCTIONS.Context;
+    key?: KEY;
+  }): Promise<boolean> {
     if (!this.can("exists")) return false;
     const result = await this.client
-      .existsKey(context, this.getKey(`${params.key ?? ""}`), this.log)
+      .existsKey({
+        context,
+        key: this.getKey(`${params.key ?? ""}`),
+        log: this.log,
+      })
       .catch(() => false);
     return result;
   }
-  async existsHashFields(
-    context: FUNCTIONS.Context,
-    params: { key?: KEY; fields?: KEY[] | AllFields }
-  ): Promise<Record<KEY, boolean>> {
+  async existsHashFields({
+    context,
+    ...params
+  }: {
+    context: FUNCTIONS.Context;
+    key?: KEY;
+    fields?: KEY[] | AllFields;
+  }): Promise<Record<KEY, boolean>> {
     if (!this.can("exists")) return {};
     const result = await this.client
-      .existsHashFields(
+      .existsHashFields({
         context,
-        this.getKey(`${params.key ?? ""}`),
-        params.fields ?? "*",
-        this.log
-      )
+        key: this.getKey(`${params.key ?? ""}`),
+        fields: params.fields ?? "*",
+        log: this.log,
+      })
       .catch(() => ({}));
     return result;
   }
-  async readKey<T>(
-    context: FUNCTIONS.Context,
-    params: { key?: KEY }
-  ): Promise<T | undefined> {
+  async readKey<T>({
+    context,
+    ...params
+  }: {
+    context: FUNCTIONS.Context;
+    key?: KEY;
+  }): Promise<T | undefined> {
     if (!this.can("read")) return undefined;
     const result = await this.client
-      .readKey<T>(context, this.getKey(`${params.key ?? ""}`), this.log)
+      .readKey<T>({
+        context,
+        key: this.getKey(`${params.key ?? ""}`),
+        log: this.log,
+      })
       .catch(() => undefined);
     return result;
   }
-  async readHashFields<T extends Record<KEY, unknown>>(
-    context: FUNCTIONS.Context,
-    params: { key?: KEY; fields?: KEY[] | AllFields }
-  ): Promise<Partial<T>> {
+  async readHashFields<T extends Record<KEY, unknown>>({
+    context,
+    ...params
+  }: {
+    context: FUNCTIONS.Context;
+    key?: KEY;
+    fields?: KEY[] | AllFields;
+  }): Promise<Partial<T>> {
     if (!this.can("read")) return {};
     const result = await this.client
-      .readHashFields<T>(
+      .readHashFields<T>({
         context,
-        this.getKey(`${params.key ?? ""}`),
-        params.fields ?? "*",
-        this.log
-      )
+        key: this.getKey(`${params.key ?? ""}`),
+        fields: params.fields ?? "*",
+        log: this.log,
+      })
       .catch(() => ({}));
     return result;
   }
-  async writeKey<T>(
-    context: FUNCTIONS.Context,
-    params: { key?: KEY; value: T | Promise<T>; expire?: number }
-  ): Promise<void> {
+  async writeKey<T>({
+    context,
+    ...params
+  }: {
+    context: FUNCTIONS.Context;
+    key?: KEY;
+    value: T | Promise<T>;
+    expire?: number;
+  }): Promise<void> {
     if (!this.can("write")) return;
     await this.client
-      .writeKey(
+      .writeKey({
         context,
-        this.getKey(`${params.key ?? ""}`),
-        params.value,
-        params.expire ?? this.defaultExpiry,
-        this.log
-      )
+        key: this.getKey(`${params.key ?? ""}`),
+        value: params.value,
+        expire: params.expire ?? this.defaultExpiry,
+        log: this.log,
+      })
       .catch(() => {});
   }
-  async writeHashFields<T extends Record<KEY, unknown>>(
-    context: FUNCTIONS.Context,
-    params: { key?: KEY; value: T | Promise<T>; expire?: number }
-  ): Promise<void> {
+  async writeHashFields<T extends Record<KEY, unknown>>({
+    context,
+    ...params
+  }: {
+    context: FUNCTIONS.Context;
+    key?: KEY;
+    value: T | Promise<T>;
+    expire?: number;
+  }): Promise<void> {
     if (!this.can("write")) return;
     await this.client
-      .writeHashFields(
+      .writeHashFields({
         context,
-        this.getKey(`${params.key ?? ""}`),
-        params.value,
-        params.expire ?? this.defaultExpiry,
-        this.log
-      )
+        key: this.getKey(`${params.key ?? ""}`),
+        value: params.value,
+        expire: params.expire ?? this.defaultExpiry,
+        log: this.log,
+      })
       .catch(() => {});
   }
-  async removeKey(
-    context: FUNCTIONS.Context,
-    params: { key?: KEY }
-  ): Promise<void> {
+  async removeKey({
+    context,
+    ...params
+  }: {
+    context: FUNCTIONS.Context;
+    key?: KEY;
+  }): Promise<void> {
     if (!this.can("remove")) return;
     await this.client
-      .removeKey(context, this.getKey(`${params.key ?? ""}`), this.log)
+      .removeKey({
+        context,
+        key: this.getKey(`${params.key ?? ""}`),
+        log: this.log,
+      })
       .catch(() => undefined);
   }
-  async removeHashFields(
-    context: FUNCTIONS.Context,
-    params: { key?: KEY; fields?: KEY[] | AllFields }
-  ): Promise<void> {
+  async removeHashFields({
+    context,
+    ...params
+  }: {
+    context: FUNCTIONS.Context;
+    key?: KEY;
+    fields?: KEY[] | AllFields;
+  }): Promise<void> {
     if (!this.can("remove")) return;
     await this.client
-      .removeHashFields(
+      .removeHashFields({
         context,
-        this.getKey(`${params.key ?? ""}`),
-        params.fields ?? "*",
-        this.log
-      )
+        key: this.getKey(`${params.key ?? ""}`),
+        fields: params.fields ?? "*",
+        log: this.log,
+      })
       .catch(() => ({}));
   }
   /* Extensions */
-  run<K extends ExtendedFuncNames<T>>(
-    context: FUNCTIONS.Context,
-    method: K,
-    params: T[K] extends ExtendedFunc<infer P, Any> ? P : never
-  ): T[K] extends ExtendedFunc<Any, infer R> ? R : never {
-    return (this.client[method] as ExtendedFunc<unknown, unknown>)(
+  run<K extends ExtendedFuncNames<T>>({
+    context,
+    method,
+    params,
+  }: {
+    context: FUNCTIONS.Context;
+    method: K;
+    params: T[K] extends ExtendedFunc<infer P, Any> ? P : never;
+  }): T[K] extends ExtendedFunc<Any, infer R> ? R : never {
+    return (this.client[method] as ExtendedFunc<unknown, unknown>)({
       context,
-      this,
-      params
-    ) as never;
+      controller: this,
+      params,
+    }) as never;
   }
 }

@@ -29,18 +29,18 @@ export type MultipleObjectInfo<Id extends KEY> = {
  * const getUser = FUNCTIONS.AsyncFunction.build({
  *   input: z.object({ userId: z.number() }),
  *   output: z.object({ name: z.string(), address: z.string() }).optional(),
- *   wrappers: (params) => [
- *     CACHE.Wrapper(params, {
- *       getHook: (context, {userId}) =>
+ *   wrappers: (_params) => [
+ *     CACHE.Wrapper({
+ *       _params,
+ *       getHook: ({context, input: {userId}}) =>
  *         new CACHE.HOOKS.SingleObject({
  *           context,
  *           cache: cache.addPrefix(`UserId:${userId}`),
- *           schema: params.output
+ *           schema: _params.output
  *         }),
- *       updateInput: (_context, {userId}, _info) => ({userId}),
  *     }),
  *   ],
- *   async func(context, {userId}) {
+ *   async func({context, input: {userId}}) {
  *     if (!userId.length) return {};
  *     const result = await pg.query(`SELECT name, address FROM users WHERE id = ${userId} LIMIT 1`);
  *     const user = result.rows[0];
@@ -48,9 +48,9 @@ export type MultipleObjectInfo<Id extends KEY> = {
  *   },
  * });
  * // UPDATE OR DELETE CACHE
- * const hook = getUser.wrappers[0].getHook(context, { userId: user.id });
- * await hook.set({ name: user.name, address: user.address });
- * await hook.del();
+ * const hook = getUser.wrappers[0].getHook({context, input: { userId: user.id }});
+ * await hook.set({output: { name: user.name, address: user.address }});
+ * await hook.del({});
  * ```
  */ export class SingleObject<
   A extends AbstractCacheClient,
@@ -71,18 +71,21 @@ export type MultipleObjectInfo<Id extends KEY> = {
     this.cache = cache;
     this.schema = schema;
   }
-  override isIncomplete(info: SingleObjectInfo): boolean {
+  override isIncomplete({ info }: { info: SingleObjectInfo }): boolean {
     return !info.found;
   }
   override async exists(): Promise<SingleObjectInfo> {
-    const exists = await this.cache.existsKey(this.context, {});
+    const exists = await this.cache.existsKey({ context: this.context });
     return { found: exists };
   }
-  override async get(
-    safe?: boolean
-  ): Promise<{ val: z.TypeOf<O>; info: SingleObjectInfo }> {
+  override async get({
+    safe,
+  }: {
+    safe?: boolean;
+  }): Promise<{ val: z.TypeOf<O>; info: SingleObjectInfo }> {
     const res =
-      (await this.cache.readKey<z.infer<O>>(this.context, {})) ?? undefined;
+      (await this.cache.readKey<z.infer<O>>({ context: this.context })) ??
+      undefined;
     let val = res;
     if (safe) val = this.schema.safeParse(val).data ?? undefined;
     return {
@@ -90,20 +93,29 @@ export type MultipleObjectInfo<Id extends KEY> = {
       info: { found: val !== undefined },
     };
   }
-  override async set(
-    output: SyncOrPromise<z.TypeOf<O>>,
-    ifExists?: boolean
-  ): Promise<void> {
+  override async set({
+    output,
+    ifExists,
+  }: {
+    output: SyncOrPromise<z.TypeOf<O>>;
+    ifExists?: boolean;
+  }): Promise<void> {
     if (ifExists) {
       const data = await this.exists();
       if (!data.found) return;
     }
-    await this.cache.writeKey(this.context, { value: output });
+    await this.cache.writeKey({ context: this.context, value: output });
   }
   override async del(): Promise<void> {
-    await this.cache.removeKey(this.context, {});
+    await this.cache.removeKey({ context: this.context });
   }
-  override merge(target: z.TypeOf<O>, extension: z.TypeOf<O>): z.TypeOf<O> {
+  override merge({
+    extension,
+    target,
+  }: {
+    target: z.TypeOf<O>;
+    extension: z.TypeOf<O>;
+  }): z.TypeOf<O> {
     return target ?? extension;
   }
 }
@@ -114,25 +126,26 @@ export type MultipleObjectInfo<Id extends KEY> = {
  * const getUsers = FUNCTIONS.AsyncFunction.build({
  *   input: z.object({ userIds: z.number().array() }),
  *   output: z.record(z.number(), z.object({ id: z.number(), name: z.string(), address: z.string() })),
- *   wrappers: (params) => [
- *     CACHE.Wrapper(params, {
- *       getHook: (context, { userIds }) =>
+ *   wrappers: (_params) => [
+ *     CACHE.Wrapper({
+ *       _params, 
+ *       getHook: ({context, input: { userIds }}) =>
  *         new CACHE.HOOKS.MultipleObject({
  *           context,
  *           cache: cache.addPrefix(`UserId`),
- *           schema: params.output,
+ *           schema: _params.output,
  *           ids: userIds
  *         }),
- *       updateInput: (_context, _input, info) => ({ userIds: info }),
+ *       updateInput: ({info}) => ({ userIds: info }),
  *       useHook(Hooks) {
  *         // UPDATE OR DELETE CACHE
- *         const hook = Hooks(context, { userIds: [user.id] });
- *         await hook.set({ [user.id]: { id: user.id, name: user.name, address: user.address } });
- *         await hook.del();
+ *         const hook = Hooks({context, input: { userIds: [user.id] }});
+ *         await hook.set({output: { [user.id]: { id: user.id, name: user.name, address: user.address } }});
+ *         await hook.del({});
  *       },
  *     }),
  *   ],
- *   async func(context, {userIds}) {
+ *   async func({context, input: {userIds}}) {
  *     const result = await pg.query(`SELECT id, name, address FROM users WHERE id IN (${userIds.join(', ')}) LIMIT 1`);
  *     const users = result.rows;
  *     return TOOLS.oneToOneMapping(users, 'id');
@@ -165,14 +178,18 @@ export type MultipleObjectInfo<Id extends KEY> = {
     this.idSchema = schema.keySchema;
     this.ids = ids;
   }
-  override isIncomplete(info: MultipleObjectInfo<z.infer<Id>>): boolean {
+  override isIncomplete({
+    info,
+  }: {
+    info: MultipleObjectInfo<z.infer<Id>>;
+  }): boolean {
     return info.notFound.length !== 0;
   }
   override async exists(): Promise<MultipleObjectInfo<z.infer<Id>>> {
     const info = await Promise.all(
       this.ids.map((id) =>
         this.cache
-          .existsKey(this.context, { key: id })
+          .existsKey({ context: this.context, key: id })
           .then((exists) => ({ id, found: exists }))
       )
     );
@@ -181,13 +198,13 @@ export type MultipleObjectInfo<Id extends KEY> = {
       notFound: info.filter((x) => !x.found).map((x) => x.id),
     };
   }
-  override async get(safe?: boolean): Promise<{
+  override async get({ safe }: { safe?: boolean }): Promise<{
     val: Record<z.infer<Id>, O["_output"]>;
     info: MultipleObjectInfo<z.infer<Id>>;
   }> {
     const res = await Promise.all(
       this.ids.map((x) =>
-        this.cache.readKey<z.infer<O>>(this.context, { key: x })
+        this.cache.readKey<z.infer<O>>({ context: this.context, key: x })
       )
     );
     const val = bundleCached(this.ids, res);
@@ -205,10 +222,13 @@ export type MultipleObjectInfo<Id extends KEY> = {
       },
     };
   }
-  override async set(
-    output: SyncOrPromise<Record<z.infer<Id>, O["_output"]>>,
-    ifExists?: boolean
-  ): Promise<void> {
+  override async set({
+    output,
+    ifExists,
+  }: {
+    output: SyncOrPromise<Record<z.infer<Id>, O["_output"]>>;
+    ifExists?: boolean;
+  }): Promise<void> {
     let recordedOutput: Record<z.infer<Id>, SyncOrPromise<z.infer<O>>>;
     if (output instanceof Promise) {
       const promise = output;
@@ -222,7 +242,8 @@ export type MultipleObjectInfo<Id extends KEY> = {
     }
     await Promise.all(
       Object.keys(recordedOutput).map((x) =>
-        this.cache.writeKey(this.context, {
+        this.cache.writeKey({
+          context: this.context,
           key: x,
           value: recordedOutput[x as z.TypeOf<Id>],
         })
@@ -231,13 +252,18 @@ export type MultipleObjectInfo<Id extends KEY> = {
   }
   override async del(): Promise<void> {
     await Promise.all(
-      this.ids.map((x) => this.cache.removeKey(this.context, { key: x }))
+      this.ids.map((x) =>
+        this.cache.removeKey({ context: this.context, key: x })
+      )
     );
   }
-  override merge(
-    target: Record<z.infer<Id>, O["_output"]>,
-    extension: Record<z.infer<Id>, O["_output"]>
-  ): Record<z.infer<Id>, O["_output"]> {
+  override merge({
+    extension,
+    target,
+  }: {
+    target: Record<z.infer<Id>, O["_output"]>;
+    extension: Record<z.infer<Id>, O["_output"]>;
+  }): Record<z.infer<Id>, O["_output"]> {
     return Object.assign(target, extension);
   }
 }

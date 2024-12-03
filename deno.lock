@@ -1,23 +1,30 @@
 {
   "version": "4",
   "specifiers": {
-    "jsr:@panth977/functions@0.2": "0.2.0",
-    "npm:zod@^3.23.8": "3.23.8"
+    "jsr:@panth977/functions@~0.2.5": "0.2.5",
+    "npm:crypto@1": "1.0.1",
+    "npm:zod@^3.23.0": "3.23.8"
   },
   "jsr": {
-    "@panth977/functions@0.2.0": {
-      "integrity": "0715c6e3e1d335dd235f9f2dda9b4fbb3061ee8fa2152e7e9e80e6e6a8833c09"
+    "@panth977/functions@0.2.5": {
+      "integrity": "0c23d9da7d490e861fc2983e6a3441094fcaebe7c687e4317972d73d4ce74797",
+      "dependencies": [
+        "npm:crypto"
+      ]
     }
   },
   "npm": {
+    "crypto@1.0.1": {
+      "integrity": "sha512-VxBKmeNcqQdiUQUW2Tzq0t377b54N2bMtXO/qiLa+6eRRmmC4qT3D4OnTGoT/U6O9aklQ/jTwbOtRMTTY8G0Ig=="
+    },
     "zod@3.23.8": {
       "integrity": "sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g=="
     }
   },
   "workspace": {
     "dependencies": [
-      "jsr:@panth977/functions@0.2",
-      "npm:zod@^3.23.8"
+      "jsr:@panth977/functions@~0.2.5",
+      "npm:zod@^3.23.0"
     ]
   }
 }

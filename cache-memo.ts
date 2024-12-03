@@ -12,7 +12,7 @@ function time() {
  * @example
  * ```ts
  * import { CACHE } from '@panth977/cache';
- * 
+ *
  * const cache = new CACHE.CacheController({
  *   client: new CACHE.MemoCacheClient(),
  *   allowed: {"*": true},
@@ -32,11 +32,15 @@ export class MemoCacheClient extends AbstractCacheClient {
   constructor() {
     super("Memo");
   }
-  override async existsKey(
-    context: FUNCTIONS.Context,
-    key: KEY,
-    log?: boolean
-  ): Promise<boolean> {
+  override async existsKey({
+    context,
+    key,
+    log,
+  }: {
+    context: FUNCTIONS.Context;
+    key: KEY;
+    log?: boolean;
+  }): Promise<boolean> {
     const timer = time();
     const keyValue = this.memo[key];
     const value =
@@ -48,12 +52,17 @@ export class MemoCacheClient extends AbstractCacheClient {
     }
     return value;
   }
-  override async existsHashFields(
-    context: FUNCTIONS.Context,
-    key: KEY,
-    fields: AllFields | KEY[],
-    log?: boolean
-  ): Promise<Record<string, boolean>> {
+  override async existsHashFields({
+    context,
+    fields,
+    key,
+    log,
+  }: {
+    context: FUNCTIONS.Context;
+    key: KEY;
+    fields: AllFields | KEY[];
+    log?: boolean;
+  }): Promise<Record<string, boolean>> {
     const timer = time();
     const hashValue = this.memo[key];
     const value =
@@ -86,11 +95,15 @@ export class MemoCacheClient extends AbstractCacheClient {
     return value;
   }
 
-  override async readKey<T>(
-    context: FUNCTIONS.Context,
-    key: KEY,
-    log?: boolean
-  ): Promise<T | undefined> {
+  override async readKey<T>({
+    context,
+    key,
+    log,
+  }: {
+    context: FUNCTIONS.Context;
+    key: KEY;
+    log?: boolean;
+  }): Promise<T | undefined> {
     const timer = time();
     const keyValue = this.memo[key];
     const value = keyValue instanceof Promise ? await keyValue : undefined;
@@ -99,12 +112,17 @@ export class MemoCacheClient extends AbstractCacheClient {
     }
     return value as T | undefined;
   }
-  override async readHashFields<T extends Record<string, unknown>>(
-    context: FUNCTIONS.Context,
-    key: KEY,
-    fields: AllFields | KEY[],
-    log?: boolean
-  ): Promise<Partial<T>> {
+  override async readHashFields<T extends Record<string, unknown>>({
+    context,
+    fields,
+    key,
+    log,
+  }: {
+    context: FUNCTIONS.Context;
+    key: KEY;
+    fields: AllFields | KEY[];
+    log?: boolean;
+  }): Promise<Partial<T>> {
     const timer = time();
     const hashValue = this.memo[key];
     const value =
@@ -138,13 +156,19 @@ export class MemoCacheClient extends AbstractCacheClient {
     return value as Partial<T>;
   }
 
-  override async writeKey<T>(
-    context: FUNCTIONS.Context,
-    key: KEY,
-    value: T | Promise<T>,
-    expire: number,
-    log?: boolean
-  ): Promise<void> {
+  override async writeKey<T>({
+    context,
+    expire,
+    key,
+    value,
+    log,
+  }: {
+    context: FUNCTIONS.Context;
+    key: KEY;
+    value: T | Promise<T>;
+    expire: number;
+    log?: boolean;
+  }): Promise<void> {
     const timer = time();
     if (key in this.exp) {
       clearTimeout(this.exp[key]);
@@ -163,13 +187,19 @@ export class MemoCacheClient extends AbstractCacheClient {
       context.log(`(${timer()} ms) ${this.name}.write(${key}) ✅`);
     }
   }
-  override async writeHashFields<T extends Record<string, unknown>>(
-    context: FUNCTIONS.Context,
-    key: KEY,
-    value: Promise<T> | { [k in keyof T]: Promise<T[k]> | T[k] },
-    expire: number,
-    log?: boolean
-  ): Promise<void> {
+  override async writeHashFields<T extends Record<string, unknown>>({
+    context,
+    expire,
+    key,
+    value,
+    log,
+  }: {
+    context: FUNCTIONS.Context;
+    key: KEY;
+    value: Promise<T> | { [k in keyof T]: Promise<T[k]> | T[k] };
+    expire: number;
+    log?: boolean;
+  }): Promise<void> {
     const timer = time();
     if (key in this.exp) {
       clearTimeout(this.exp[key]);
@@ -201,11 +231,15 @@ export class MemoCacheClient extends AbstractCacheClient {
     }
   }
 
-  override async removeKey(
-    context: FUNCTIONS.Context,
-    key: KEY,
-    log?: boolean
-  ): Promise<void> {
+  override async removeKey({
+    context,
+    key,
+    log,
+  }: {
+    context: FUNCTIONS.Context;
+    key: KEY;
+    log?: boolean;
+  }): Promise<void> {
     const timer = time();
     if (this.memo[key] instanceof Promise) {
       delete this.memo[key];
@@ -218,12 +252,17 @@ export class MemoCacheClient extends AbstractCacheClient {
       context.log(`(${timer()} ms) ${this.name}.remove(${key}) ✅`);
     }
   }
-  override async removeHashFields(
-    context: FUNCTIONS.Context,
-    key: KEY,
-    fields: AllFields | KEY[],
-    log?: boolean
-  ): Promise<void> {
+  override async removeHashFields({
+    context,
+    fields,
+    key,
+    log,
+  }: {
+    context: FUNCTIONS.Context;
+    key: KEY;
+    fields: AllFields | KEY[];
+    log?: boolean;
+  }): Promise<void> {
     const timer = time();
     const hashValue = this.memo[key];
     if (hashValue instanceof Promise === false) {
