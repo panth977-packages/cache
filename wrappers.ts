@@ -1,6 +1,6 @@
 import type { z } from "zod";
 import type { Hook } from "./hooks/_helper.ts";
-import type { FUNCTIONS } from "@panth977/functions";
+import { FUNCTIONS } from "@panth977/functions";
 
 /**
  * A simple wrapper, to create a cache layer.
@@ -29,18 +29,18 @@ export function Wrapper<
   useHook?(hook: (arg: { context: C; input: z.infer<I> }) => H): void;
 }): FUNCTIONS.AsyncFunction.WrapperBuild<I, O, S, C> & {
   getHook(arg: { context: C; input: z.infer<I> }): H;
-  stateKey: { key: symbol; _type: Awaited<ReturnType<H["get"]>> };
+  stateKey: FUNCTIONS.ContextStateKey<Awaited<ReturnType<H["get"]>>>;
 } {
-  const stateKey = {
-    key: Symbol(),
-    _type: {} as Awaited<ReturnType<H["get"]>>,
-  };
+  const stateKey = FUNCTIONS.CreateContextStateKey<Awaited<ReturnType<H["get"]>>>({
+    label: "CacheResult",
+    local: true,
+  });
   useHook?.(getHook);
   const Wrapper: FUNCTIONS.AsyncFunction.WrapperBuild<I, O, S, C> =
     async function ({ context, input, func, build }) {
       const hook = getHook({ context, input });
       const result = await hook.get({ safe: true });
-      context.setState({ key: stateKey.key, val: result });
+      context.useState(stateKey).set(result as never);
       if (hook.isIncomplete({ info: result.info })) {
         input = updateInput?.({ context, input, info: result.info }) ?? input;
         const res_ = func({ context, input, build });

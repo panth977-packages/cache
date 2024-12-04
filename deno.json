@@ -1,6 +1,6 @@
 {
   "name": "@panth977/cache",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "exports": "./mod.ts",
   "license": "MIT",
   "tasks": {
@@ -15,5 +15,5 @@
   "fmt": {
     "lineWidth": 150
   },
-  "imports": { "@panth977/functions": "jsr:@panth977/functions@^0.2.5", "zod": "npm:zod@^3.23.x" }
+  "imports": { "@panth977/functions": "jsr:@panth977/functions@^0.2.x", "zod": "npm:zod@^3.23.x" }
 }
