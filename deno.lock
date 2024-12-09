@@ -1,13 +1,13 @@
 {
   "version": "4",
   "specifiers": {
-    "jsr:@panth977/functions@~0.2.7": "0.2.7",
+    "jsr:@panth977/functions@~0.2.8": "0.2.8",
     "npm:crypto@1": "1.0.1",
     "npm:zod@^3.23.0": "3.23.8"
   },
   "jsr": {
-    "@panth977/functions@0.2.7": {
-      "integrity": "2e0b89e6afce36a6184f73fc156cf50ecc7d096a96017900a5229ba6f5790b63",
+    "@panth977/functions@0.2.8": {
+      "integrity": "3b9c1ddbe9430c5a7cc94eab858917d10db268169e550d19e4fa8bac98462673",
       "dependencies": [
         "npm:crypto"
       ]
@@ -23,7 +23,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@panth977/functions@~0.2.7",
+      "jsr:@panth977/functions@~0.2.8",
       "npm:zod@^3.23.0"
     ]
   }

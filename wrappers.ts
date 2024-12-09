@@ -11,7 +11,7 @@ import { FUNCTIONS } from "@panth977/functions";
 export function Wrapper<
   I extends z.ZodType,
   O extends z.ZodType,
-  S,
+  S extends Record<never, never>,
   C extends FUNCTIONS.Context,
   H extends Hook<any, O>
 >({
@@ -31,9 +31,9 @@ export function Wrapper<
   getHook(arg: { context: C; input: z.infer<I> }): H;
   stateKey: FUNCTIONS.ContextStateKey<Awaited<ReturnType<H["get"]>>>;
 } {
-  const stateKey = FUNCTIONS.CreateContextStateKey<Awaited<ReturnType<H["get"]>>>({
+  const stateKey = FUNCTIONS.DefaultContextState.CreateKey<Awaited<ReturnType<H["get"]>>>({
     label: "CacheResult",
-    local: true,
+    scope: 'local',
   });
   useHook?.(getHook);
   const Wrapper: FUNCTIONS.AsyncFunction.WrapperBuild<I, O, S, C> =
