@@ -151,13 +151,16 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
       log: opt,
     });
   }
-  setAllowance(opt: Omit<Actions<T>, "*">): CacheController<T> {
+  setAllowance(opt: Omit<Actions<T>, "*"> | boolean): CacheController<T> {
     return new CacheController({
       client: this.client,
       separator: this.separator,
       defaultExpiry: this.defaultExpiry,
       prefix: this.prefix,
-      allowed: Object.assign({}, this.allowed, opt),
+      allowed:
+        typeof opt === "boolean"
+          ? ({ "*": opt } as never)
+          : Object.assign({}, this.allowed, opt),
       log: this.log,
     });
   }
