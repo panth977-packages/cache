@@ -172,6 +172,7 @@ export type MultipleObjectInfo<Id extends KEY> = {
     schema: z.ZodRecord<Id, O>;
     ids: z.infer<Id>[];
   }) {
+    ids = [...new Set(ids)];
     super(context);
     this.cache = cache;
     this.schema = schema.valueSchema;

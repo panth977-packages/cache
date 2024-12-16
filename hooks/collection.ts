@@ -93,12 +93,10 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
     schema: z.ZodRecord<SubId, O>;
     subIds: z.infer<SubId>[] | AllFields;
   }) {
+    if (subIds !== "*") subIds = [...new Set(subIds)];
     if (Array.isArray(subIds)) {
       if (subIds.includes("$")) {
         throw new Error("Cannot use subId [$] as it is reserved keyword!");
-      }
-      if (new Set(subIds).size !== subIds.length) {
-        throw new Error("Same [subId] was passed more than once");
       }
     }
     super(context);
@@ -298,18 +296,35 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
     schema: z.ZodRecord<Id, z.ZodRecord<SubId, O>>;
     locs: { id: z.infer<Id>; subIds: z.infer<SubId>[] | AllFields }[];
   }) {
-    if (new Set(locs.map((x) => x.id)).size !== locs.length) {
-      throw new Error("Same [id] was passed more than once");
-    }
-    for (const x of locs) {
-      if (Array.isArray(x.subIds)) {
-        if (x.subIds.includes("$")) {
+    const locs_: Record<string | number, (typeof locs)[number]> = {};
+    for (const l of locs) {
+      if (Array.isArray(l.subIds)) {
+        if (l.subIds.includes("$")) {
           throw new Error("Cannot use subId [$] as it is reserved keyword!");
         }
-        if (new Set(x.subIds).size !== x.subIds.length) {
-          throw new Error("Same [subId] was passed more than once");
+      }
+      if (l.id in locs_ === false) {
+        locs_[l.id] = l;
+      } else if (locs_[l.id].subIds !== "*") {
+        if (l.subIds === "*") {
+          locs_[l.id] = { id: l.id, subIds: "*" };
+        } else {
+          locs_[l.id] = {
+            id: l.id,
+            subIds: [...l.subIds, ...locs_[l.id].subIds],
+          };
         }
       }
+    }
+    locs = [];
+    for (const id in locs_) {
+      locs.push({
+        id: locs_[id].id,
+        subIds:
+          locs_[id].subIds === "*"
+            ? locs_[id].subIds
+            : [...new Set(locs_[id].subIds)],
+      });
     }
     super(context);
     this.cache = cache;
