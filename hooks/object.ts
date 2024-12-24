@@ -87,7 +87,7 @@ export type MultipleObjectInfo<Id extends KEY> = {
       (await this.cache.readKey<z.infer<O>>({ context: this.context })) ??
       undefined;
     let val = res;
-    if (safe) val = this.schema.safeParse(val).data ?? undefined;
+    if (safe) val = this.schema.safeParse(val).data;
     return {
       val,
       info: { found: val !== undefined },
@@ -211,7 +211,7 @@ export type MultipleObjectInfo<Id extends KEY> = {
     const val = bundleCached(this.ids, res);
     if (safe) {
       for (const id in val) {
-        val[id] = this.schema.safeParse(val[id]).data ?? undefined;
+        val[id] = this.schema.safeParse(val[id]).data;
         if (val[id] === undefined) delete val[id];
       }
     }

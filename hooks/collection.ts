@@ -142,7 +142,7 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
     const val: Record<KEY, any> = res ?? {};
     if (safe) {
       for (const subId in val) {
-        val[subId] = this.schema.safeParse(val[subId]).data ?? undefined;
+        val[subId] = this.schema.safeParse(val[subId]).data;
         if (val[subId] === undefined) {
           delete val[subId];
           $ = undefined;
@@ -151,12 +151,8 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
     }
     const found =
       this.subIds !== "*"
-        ? this.subIds.filter((x) => res[x])
-        : Object.keys(res)
-            .filter((x) => x in res)
-            .map((x) => this.subIdSchema.safeParse(x))
-            .filter((x) => x.success)
-            .map((x) => x.data);
+        ? this.subIds.filter((x) => x in res)
+        : Object.keys(res);
     const notFound =
       this.subIds !== "*"
         ? this.subIds.filter((x) => !(x in res))
@@ -398,8 +394,7 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
         $[id] = val[id].$;
         delete val[id].$;
         for (const subId in val[id]) {
-          val[id][subId] =
-            this.schema.safeParse(val[id][subId]).data ?? undefined;
+          val[id][subId] = this.schema.safeParse(val[id][subId]).data;
           if (val[id][subId] === undefined) {
             delete val[id][subId];
             delete $[id];
@@ -410,12 +405,7 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
     const info = this.locs.map((x) => ({
       id: x.id,
       found:
-        x.subIds !== "*"
-          ? x.subIds.filter((x) => x in val)
-          : Object.keys(res)
-              .map((x) => this.subIdSchema.safeParse(x))
-              .filter((x) => x.success)
-              .map((x) => x.data as z.infer<SubId>),
+        x.subIds !== "*" ? x.subIds.filter((x) => x in val) : Object.keys(res),
       notFound:
         x.subIds !== "*"
           ? x.subIds.filter((x) => !(x in val))
