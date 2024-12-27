@@ -245,25 +245,32 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
  *     wrappers: (_params) => [
  *       CACHE.Wrapper({
  *         _params,
- *         getHook: (context, input) =>
+ *         getHook: ({ context, input }) =>
  *           new CACHE.HOOKS.MultipleCollection({
  *             context,
  *             cache: cache.addPrefix(`OrgId`),
  *             schema: _params.output,
  *             locs: input.map(x => ({id: x.orgId, subIds: x.userIds}))
  *           }),
- *         updateInput: (_context, _input, info) => info.filter(x => x.notFound.length).map(x => ({
+ *         updateInput: ({ info }) => info.filter(x => x.notFound.length).map(x => ({
  *             orgId: x.id,
  *             userIds: x.notFound,
  *             ignoreUserId: x.found,
  *         })),
  *       }),
  *     ],
- *     async func(context, input) {
+ *     async func({ context, input }) {
  *       if (!input.length) return {};
  *       const result = await pg.query(YourOptimizedQuery);
  *       const users = result.rows;
- *       return TOOLS.oneToOneToOneMapping(users, 'orgId', 'userId');
+ *       return TOOLS.oneToManyMapping({
+ *         rows: users, 
+ *         keyPath: 'orgId',
+ *         map: (rows) => TOOLS.oneToOneMapping({
+ *           rows,
+ *           keyPath: 'userId'
+ *         }),
+ *       });
  *     },
  * });
  * ```
