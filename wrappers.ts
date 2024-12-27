@@ -43,9 +43,9 @@ export function Wrapper<
       context.useState(stateKey).set(result as never);
       if (hook.isIncomplete({ info: result.info })) {
         input = updateInput?.({ context, input, info: result.info }) ?? input;
-        const res_ = func({ context, input, build });
-        hook.set({ output: res_ });
-        result.val = hook.merge({ target: result.val, extension: await res_ });
+        const res = await func({ context, input, build });
+        result.val = hook.merge({ target: result.val, extension: res });
+        hook.set({ output: result.val });
       }
       return result.val;
     };
