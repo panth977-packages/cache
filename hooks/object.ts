@@ -57,7 +57,11 @@ export type MultipleObjectInfo<Id extends KEY> = {
   O extends z.ZodType
 > extends Hook<SingleObjectInfo, O> {
   readonly cache: CacheController<A>;
-  readonly schema: O;
+  private get elementSchema() {
+    const schema = this.schema;
+    if (!schema) throw new Error("Don't have schema!");
+    return schema;
+  }
   constructor({
     cache,
     context,
@@ -65,11 +69,10 @@ export type MultipleObjectInfo<Id extends KEY> = {
   }: {
     context?: FUNCTIONS.Context;
     cache: CacheController<A>;
-    schema: O;
+    schema?: O;
   }) {
-    super(context);
+    super(context, schema);
     this.cache = cache;
-    this.schema = schema;
   }
   override isIncomplete({ info }: { info: SingleObjectInfo }): boolean {
     return !info.found;
@@ -87,7 +90,7 @@ export type MultipleObjectInfo<Id extends KEY> = {
       (await this.cache.readKey<z.infer<O>>({ context: this.context })) ??
       undefined;
     let val = res;
-    if (safe) val = this.schema.safeParse(val).data;
+    if (safe) val = this.elementSchema.safeParse(val).data;
     return {
       val,
       info: { found: val !== undefined },
@@ -128,7 +131,7 @@ export type MultipleObjectInfo<Id extends KEY> = {
  *   output: z.record(z.number(), z.object({ id: z.number(), name: z.string(), address: z.string() })),
  *   wrappers: (_params) => [
  *     CACHE.Wrapper({
- *       _params, 
+ *       _params,
  *       getHook: ({context, input: { userIds }}) =>
  *         new CACHE.HOOKS.MultipleObject({
  *           context,
@@ -156,10 +159,18 @@ export type MultipleObjectInfo<Id extends KEY> = {
   A extends AbstractCacheClient,
   O extends z.ZodType,
   Id extends zKEY
-> extends Hook<MultipleObjectInfo<z.infer<Id>>, z.ZodRecord<z.ZodString, O>> {
+> extends Hook<MultipleObjectInfo<z.infer<Id>>, z.ZodRecord<Id, O>> {
   readonly cache: CacheController<A>;
-  readonly schema: O;
-  readonly idSchema: Id;
+  private get elementSchema() {
+    const schema = this.schema;
+    if (!schema) throw new Error("Don't have schema!");
+    return schema.valueSchema;
+  }
+  // private get idSchema() {
+  //   const schema = this.schema;
+  //   if (!schema) throw new Error("Don't have schema!");
+  //   return schema.keySchema;
+  // }
   readonly ids: z.infer<Id>[];
   constructor({
     context,
@@ -169,14 +180,12 @@ export type MultipleObjectInfo<Id extends KEY> = {
   }: {
     context?: FUNCTIONS.Context;
     cache: CacheController<A>;
-    schema: z.ZodRecord<Id, O>;
+    schema?: z.ZodRecord<Id, O>;
     ids: z.infer<Id>[];
   }) {
     ids = [...new Set(ids)];
-    super(context);
+    super(context, schema);
     this.cache = cache;
-    this.schema = schema.valueSchema;
-    this.idSchema = schema.keySchema;
     this.ids = ids;
   }
   override isIncomplete({
@@ -211,7 +220,7 @@ export type MultipleObjectInfo<Id extends KEY> = {
     const val = bundleCached(this.ids, res);
     if (safe) {
       for (const id in val) {
-        val[id] = this.schema.safeParse(val[id]).data;
+        val[id] = this.elementSchema.safeParse(val[id]).data;
         if (val[id] === undefined) delete val[id];
       }
     }

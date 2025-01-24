@@ -79,8 +79,16 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
   SubId extends zKEY
 > extends Hook<SingleCollectionInfo<z.infer<SubId>>, z.ZodRecord<SubId, O>> {
   readonly cache: CacheController<A>;
-  readonly schema: O;
-  readonly subIdSchema: SubId;
+  private get elementSchema() {
+    const schema = this.schema;
+    if (!schema) throw new Error("Don't have schema!");
+    return schema.valueSchema;
+  }
+  private get subIdSchema() {
+    const schema = this.schema;
+    if (!schema) throw new Error("Don't have schema!");
+    return schema.keySchema;
+  }
   readonly subIds: z.infer<SubId>[] | AllFields;
   constructor({
     context,
@@ -90,7 +98,7 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
   }: {
     context?: FUNCTIONS.Context;
     cache: CacheController<A>;
-    schema: z.ZodRecord<SubId, O>;
+    schema?: z.ZodRecord<SubId, O>;
     subIds: z.infer<SubId>[] | AllFields;
   }) {
     if (subIds !== "*") subIds = [...new Set(subIds)];
@@ -99,10 +107,8 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
         throw new Error("Cannot use subId [$] as it is reserved keyword!");
       }
     }
-    super(context);
+    super(context, schema);
     this.cache = cache;
-    this.schema = schema.valueSchema;
-    this.subIdSchema = schema.keySchema;
     this.subIds = subIds;
   }
   override isIncomplete({
@@ -142,7 +148,7 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
     const val: Record<KEY, any> = res ?? {};
     if (safe) {
       for (const subId in val) {
-        val[subId] = this.schema.safeParse(val[subId]).data;
+        val[subId] = this.elementSchema.safeParse(val[subId]).data;
         if (val[subId] === undefined) {
           delete val[subId];
           $ = undefined;
@@ -152,6 +158,8 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
     const found =
       this.subIds !== "*"
         ? this.subIds.filter((x) => x in res)
+        : safe
+        ? Object.keys(res).map((x) => this.subIdSchema.parse(x))
         : Object.keys(res);
     const notFound =
       this.subIds !== "*"
@@ -264,7 +272,7 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
  *       const result = await pg.query(YourOptimizedQuery);
  *       const users = result.rows;
  *       return TOOLS.oneToManyMapping({
- *         rows: users, 
+ *         rows: users,
  *         keyPath: 'orgId',
  *         map: (rows) => TOOLS.oneToOneMapping({
  *           rows,
@@ -284,9 +292,21 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
   z.ZodRecord<Id, z.ZodRecord<SubId, O>>
 > {
   readonly cache: CacheController<A>;
-  readonly schema: O;
-  readonly idSchema: Id;
-  readonly subIdSchema: SubId;
+  private get elementSchema() {
+    const schema = this.schema;
+    if (!schema) throw new Error("Don't have schema!");
+    return schema.valueSchema.valueSchema;
+  }
+  private get idSchema() {
+    const schema = this.schema;
+    if (!schema) throw new Error("Don't have schema!");
+    return schema.keySchema;
+  }
+  private get subIdSchema() {
+    const schema = this.schema;
+    if (!schema) throw new Error("Don't have schema!");
+    return schema.valueSchema.keySchema;
+  }
   readonly locs: { id: z.infer<Id>; subIds: z.infer<SubId>[] | AllFields }[];
   constructor({
     context,
@@ -329,11 +349,8 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
             : [...new Set(locs_[id].subIds)],
       });
     }
-    super(context);
+    super(context, schema);
     this.cache = cache;
-    this.idSchema = schema.keySchema;
-    this.subIdSchema = schema.valueSchema.keySchema;
-    this.schema = schema.valueSchema.valueSchema;
     this.locs = locs;
   }
   override isIncomplete({
@@ -401,7 +418,7 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
         $[id] = val[id].$;
         delete val[id].$;
         for (const subId in val[id]) {
-          val[id][subId] = this.schema.safeParse(val[id][subId]).data;
+          val[id][subId] = this.elementSchema.safeParse(val[id][subId]).data;
           if (val[id][subId] === undefined) {
             delete val[id][subId];
             delete $[id];
@@ -412,7 +429,11 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
     const info = this.locs.map((x) => ({
       id: x.id,
       found:
-        x.subIds !== "*" ? x.subIds.filter((x) => x in val) : Object.keys(res),
+        x.subIds !== "*"
+          ? x.subIds.filter((x) => x in val)
+          : safe
+          ? Object.keys(res).map((x) => this.subIdSchema.parse(x))
+          : Object.keys(res),
       notFound:
         x.subIds !== "*"
           ? x.subIds.filter((x) => !(x in val))

@@ -23,32 +23,60 @@ export function extractFromPromise<T>(
     keys.map((k) => [k, promise.then((data) => data[k])])
   );
 }
-export abstract class Hook<Info, O extends z.ZodType> {
+export abstract class Hook<Info, S extends z.ZodType> {
   private context_?: FUNCTIONS.Context;
+  private schema_?: S;
   get context(): FUNCTIONS.Context | undefined {
     return this.context_;
   }
-  constructor(context?: FUNCTIONS.Context) {
+  get schema(): S | undefined {
+    return this.schema_;
+  }
+  constructor(context?: FUNCTIONS.Context, schema?: S) {
     this.context_ = context;
+    this.schema_ = schema;
+  }
+  static Wrap<I extends [] | [any, ...any[]], Info, O extends z.ZodType>(
+    getHook: (...input: I) => Hook<Info, O>,
+    func: (info: Info, ...input: I) => Promise<z.infer<O>>
+  ): (...input: I) => Promise<z.infer<O>> {
+    return async function (...arg) {
+      const hook = getHook(...arg);
+      const result = await hook.get({ safe: !!hook.schema });
+      if (hook.isIncomplete(result)) {
+        const res = await func(result.info, ...arg);
+        result.val = hook.merge({ target: result.val, extension: res });
+        hook.set({ output: result.val });
+      }
+      return result.val;
+    };
   }
   static updateContext<Info, O extends z.ZodType>(
     hook: Hook<Info, O>,
     context: FUNCTIONS.Context
-  ) {
+  ): Hook<Info, O> {
     hook.context_ = context;
+    return hook;
+  }
+  static updateSchema<Info, O extends z.ZodType>(
+    hook: Hook<Info, any>,
+    schema: O
+  ): Hook<Info, O> {
+    hook.schema_ = schema;
+    return hook;
   }
   abstract isIncomplete(arg: { info: Info }): boolean;
   abstract exists(arg: Record<never, never>): Promise<Info>;
   abstract get(arg: {
     safe?: boolean;
-  }): Promise<{ val: z.infer<O>; info: Info }>;
+  }): Promise<{ val: z.infer<S>; info: Info }>;
   abstract set(arg: {
-    output: SyncOrPromise<z.infer<O>>;
+    output: SyncOrPromise<z.infer<S>>;
     ifExists?: boolean;
   }): Promise<void>;
   abstract del(arg: Record<never, never>): Promise<void>;
   abstract merge(arg: {
-    target: z.infer<O>;
-    extension: z.infer<O>;
-  }): z.infer<O>;
+    target: z.infer<S>;
+    extension: z.infer<S>;
+  }): z.infer<S>;
 }

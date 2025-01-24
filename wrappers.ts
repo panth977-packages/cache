@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import { Hook } from "./hooks/_helper.ts";
+import { Hook } from "./hooks/index.ts";
 import { FUNCTIONS } from "@panth977/functions";
 
 
@@ -47,7 +47,7 @@ export function Wrapper<
       const hook = getHook({ context, input });
       const result = await hook.get({ safe: true });
       context.useState(stateKey).set(result as never);
-      if (hook.isIncomplete({ info: result.info })) {
+      if (hook.isIncomplete(result)) {
         input = updateInput?.({ context, input, info: result.info }) ?? input;
         const res = await func({ context, input, build });
         result.val = hook.merge({ target: result.val, extension: res });
