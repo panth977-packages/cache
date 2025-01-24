@@ -141,7 +141,7 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
   }> {
     const res = await this.cache.readHashFields({
       context: this.context,
-      fields: this.subIds,
+      fields: this.subIds === "*" ? "*" : [...this.subIds, "$"],
     });
     let $: any = res.$;
     delete res.$;
@@ -162,10 +162,10 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
         ? Object.keys(res).map((x) => this.subIdSchema.parse(x))
         : Object.keys(res);
     const notFound =
-      this.subIds !== "*"
-        ? this.subIds.filter((x) => !(x in res))
-        : $ === "*"
+      $ === "*"
         ? []
+        : this.subIds !== "*"
+        ? this.subIds.filter((x) => !(x in res))
         : "*";
     return { val, info: { found, notFound } };
   }
@@ -404,7 +404,7 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
         this.cache.readHashFields({
           context: this.context,
           key: x.id,
-          fields: x.subIds,
+          fields: x.subIds === "*" ? "*" : [...x.subIds, "$"],
         })
       )
     );
@@ -434,12 +434,11 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
           : safe
           ? Object.keys(res).map((x) => this.subIdSchema.parse(x))
           : Object.keys(res),
-      notFound:
-        x.subIds !== "*"
-          ? x.subIds.filter((x) => !(x in val))
-          : $
-          ? []
-          : ("*" as const),
+      notFound: $
+        ? []
+        : x.subIds !== "*"
+        ? x.subIds.filter((x) => !(x in val))
+        : ("*" as const),
     }));
     return { val, info };
   }
