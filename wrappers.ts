@@ -60,3 +60,20 @@ export function Wrapper<
     };
   return Object.assign(Wrapper, { getHook, stateKey });
 }
+
+export function Wrap<I extends [] | [any, ...any[]], Info, O extends z.ZodType>(
+  getHook: (...input: I) => Hook<Info, O>,
+  func: (info: Info, ...input: I) => Promise<z.infer<O>>
+): (...input: I) => Promise<z.infer<O>> {
+  async function CacheFunc(...arg: I) {
+    const hook = getHook(...arg);
+    const result = await hook.get({ safe: !!hook.schema });
+    if (hook.isIncomplete(result)) {
+      const res = await func(result.info, ...arg);
+      result.val = hook.merge({ target: result.val, extension: res });
+      hook.set({ output: result.val });
+    }
+    return result.val;
+  }
+  return Object.assign(CacheFunc, getHook);
+}
