@@ -24,9 +24,18 @@ export function extractFromPromise<T>(
   );
 }
 export abstract class Hook<Info, O extends z.ZodType> {
-  readonly context: FUNCTIONS.Context;
-  constructor(context: FUNCTIONS.Context) {
-    this.context = context;
+  private context_?: FUNCTIONS.Context;
+  get context() {
+    return this.context_;
+  }
+  constructor(context?: FUNCTIONS.Context) {
+    this.context_ = context;
+  }
+  static updateContext<Info, O extends z.ZodType>(
+    hook: Hook<Info, O>,
+    context: FUNCTIONS.Context
+  ) {
+    hook.context_ = context;
   }
   abstract isIncomplete(arg: { info: Info }): boolean;
   abstract exists(arg: Record<never, never>): Promise<Info>;

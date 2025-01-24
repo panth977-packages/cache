@@ -37,7 +37,7 @@ export class MemoCacheClient extends AbstractCacheClient {
     key,
     log,
   }: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key: KEY;
     log?: boolean;
   }): Promise<boolean> {
@@ -48,7 +48,7 @@ export class MemoCacheClient extends AbstractCacheClient {
         ? keyValue.then((x) => x !== undefined)
         : false;
     if (log) {
-      context.log(`(${timer()} ms) ${this.name}.exists(${key}) ✅`);
+      (context ?? console).log(`(${timer()} ms) ${this.name}.exists(${key}) ✅`);
     }
     return value;
   }
@@ -58,7 +58,7 @@ export class MemoCacheClient extends AbstractCacheClient {
     key,
     log,
   }: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key: KEY;
     fields: AllFields | KEY[];
     log?: boolean;
@@ -86,7 +86,7 @@ export class MemoCacheClient extends AbstractCacheClient {
             )
           );
     if (log) {
-      context.log(
+      (context ?? console).log(
         `(${timer()} ms) ${this.name}.exists(${key}, ${
           fields === "*" ? "*" : `[${fields}]`
         }) ✅`
@@ -100,7 +100,7 @@ export class MemoCacheClient extends AbstractCacheClient {
     key,
     log,
   }: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key: KEY;
     log?: boolean;
   }): Promise<T | undefined> {
@@ -108,7 +108,7 @@ export class MemoCacheClient extends AbstractCacheClient {
     const keyValue = this.memo[key];
     const value = keyValue instanceof Promise ? await keyValue : undefined;
     if (log) {
-      context.log(`(${timer()} ms) ${this.name}.read(${key}) ✅`);
+      (context ?? console).log(`(${timer()} ms) ${this.name}.read(${key}) ✅`);
     }
     return value as T | undefined;
   }
@@ -118,7 +118,7 @@ export class MemoCacheClient extends AbstractCacheClient {
     key,
     log,
   }: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key: KEY;
     fields: AllFields | KEY[];
     log?: boolean;
@@ -142,7 +142,7 @@ export class MemoCacheClient extends AbstractCacheClient {
             )
           );
     if (log) {
-      context.log(
+      (context ?? console).log(
         `(${timer()} ms) ${this.name}.read(${key}, ${
           fields === "*" ? "*" : `[${fields}]`
         }) ✅`
@@ -163,7 +163,7 @@ export class MemoCacheClient extends AbstractCacheClient {
     value,
     log,
   }: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key: KEY;
     value: T | Promise<T>;
     expire: number;
@@ -184,7 +184,7 @@ export class MemoCacheClient extends AbstractCacheClient {
       }, expire);
     }
     if (log) {
-      context.log(`(${timer()} ms) ${this.name}.write(${key}) ✅`);
+      (context ?? console).log(`(${timer()} ms) ${this.name}.write(${key}) ✅`);
     }
   }
   override async writeHashFields<T extends Record<string, unknown>>({
@@ -194,7 +194,7 @@ export class MemoCacheClient extends AbstractCacheClient {
     value,
     log,
   }: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key: KEY;
     value: Promise<T> | { [k in keyof T]: Promise<T[k]> | T[k] };
     expire: number;
@@ -222,7 +222,7 @@ export class MemoCacheClient extends AbstractCacheClient {
       }, expire);
     }
     if (log) {
-      context.log(
+      (context ?? console).log(
         `(${timer()} ms) ${this.name}.write(${key}, [${
           //
           Object.keys(awaitedValue)
@@ -236,7 +236,7 @@ export class MemoCacheClient extends AbstractCacheClient {
     key,
     log,
   }: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key: KEY;
     log?: boolean;
   }): Promise<void> {
@@ -249,7 +249,7 @@ export class MemoCacheClient extends AbstractCacheClient {
       }
     }
     if (log) {
-      context.log(`(${timer()} ms) ${this.name}.remove(${key}) ✅`);
+      (context ?? console).log(`(${timer()} ms) ${this.name}.remove(${key}) ✅`);
     }
   }
   override async removeHashFields({
@@ -258,7 +258,7 @@ export class MemoCacheClient extends AbstractCacheClient {
     key,
     log,
   }: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key: KEY;
     fields: AllFields | KEY[];
     log?: boolean;
@@ -279,7 +279,7 @@ export class MemoCacheClient extends AbstractCacheClient {
       }
     }
     if (log) {
-      context.log(
+      (context ?? console).log(
         `(${timer()} ms) ${this.name}.remove(${key}, ${
           fields === "*" ? "*" : `[${fields}]`
         }) ✅`

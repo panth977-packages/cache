@@ -88,7 +88,7 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
     schema,
     subIds,
   }: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     cache: CacheController<A>;
     schema: z.ZodRecord<SubId, O>;
     subIds: z.infer<SubId>[] | AllFields;
@@ -294,7 +294,7 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
     schema,
     locs,
   }: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     cache: CacheController<A>;
     schema: z.ZodRecord<Id, z.ZodRecord<SubId, O>>;
     locs: { id: z.infer<Id>; subIds: z.infer<SubId>[] | AllFields }[];

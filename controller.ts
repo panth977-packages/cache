@@ -3,7 +3,7 @@ export type KEY = string | number;
 export type AllFields = "*";
 type Any = any;
 type ExtendedFunc<P, R> = (arg: {
-  context: FUNCTIONS.Context;
+  context?: FUNCTIONS.Context;
   controller: CacheController | null;
   params: P;
 }) => R;
@@ -30,48 +30,48 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
   }
 
   abstract existsKey(arg: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key: KEY;
     log?: boolean;
   }): Promise<boolean>;
   abstract existsHashFields(arg: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key: KEY;
     fields: KEY[] | AllFields;
     log?: boolean;
   }): Promise<Record<string, boolean>>;
   abstract readKey<T>(arg: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key: KEY;
     log?: boolean;
   }): Promise<T | undefined>;
   abstract readHashFields<T extends Record<string, unknown>>(arg: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key: KEY;
     fields: KEY[] | AllFields;
     log?: boolean;
   }): Promise<Partial<T>>;
   abstract writeKey<T>(arg: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key: KEY;
     value: T | Promise<T>;
     expire: number;
     log?: boolean;
   }): Promise<void>;
   abstract writeHashFields<T extends Record<string, unknown>>(arg: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key: KEY;
     value: Promise<T> | { [k in keyof T]: Promise<T[k]> | T[k] };
     expire: number;
     log?: boolean;
   }): Promise<void>;
   abstract removeKey(arg: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key: KEY;
     log?: boolean;
   }): Promise<void>;
   abstract removeHashFields(arg: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key: KEY;
     fields: KEY[] | AllFields;
     log?: boolean;
@@ -169,7 +169,7 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
     context,
     ...params
   }: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key?: KEY;
   }): Promise<boolean> {
     if (!this.can("exists")) return false;
@@ -186,7 +186,7 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
     context,
     ...params
   }: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key?: KEY;
     fields?: KEY[] | AllFields;
   }): Promise<Record<KEY, boolean>> {
@@ -205,7 +205,7 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
     context,
     ...params
   }: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key?: KEY;
   }): Promise<T | undefined> {
     if (!this.can("read")) return undefined;
@@ -222,7 +222,7 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
     context,
     ...params
   }: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key?: KEY;
     fields?: KEY[] | AllFields;
   }): Promise<Partial<T>> {
@@ -241,7 +241,7 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
     context,
     ...params
   }: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key?: KEY;
     value: T | Promise<T>;
     expire?: number;
@@ -261,7 +261,7 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
     context,
     ...params
   }: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key?: KEY;
     value: T | Promise<T>;
     expire?: number;
@@ -281,7 +281,7 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
     context,
     ...params
   }: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key?: KEY;
   }): Promise<void> {
     if (!this.can("remove")) return;
@@ -297,7 +297,7 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
     context,
     ...params
   }: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     key?: KEY;
     fields?: KEY[] | AllFields;
   }): Promise<void> {
@@ -317,7 +317,7 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
     method,
     params,
   }: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     method: K;
     params: T[K] extends ExtendedFunc<infer P, Any> ? P : never;
   }): T[K] extends ExtendedFunc<Any, infer R> ? R : never {

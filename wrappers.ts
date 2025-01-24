@@ -1,6 +1,7 @@
 import type { z } from "zod";
-import type { Hook } from "./hooks/_helper.ts";
+import { Hook } from "./hooks/_helper.ts";
 import { FUNCTIONS } from "@panth977/functions";
+
 
 /**
  * A simple wrapper, to create a cache layer.
@@ -15,7 +16,7 @@ export function Wrapper<
   C extends FUNCTIONS.Context,
   H extends Hook<any, O>
 >({
-  getHook,
+  getHook: getHook_,
   updateInput,
   useHook,
 }: {
@@ -35,6 +36,11 @@ export function Wrapper<
     label: "CacheResult",
     scope: 'local',
   });
+  function getHook(arg: { context: C; input: z.infer<I> }): H {
+    const hook = getHook_(arg);
+    Hook.updateContext(hook, arg.context);
+    return hook;
+  }
   useHook?.(getHook);
   const Wrapper: FUNCTIONS.AsyncFunction.WrapperBuild<I, O, S, C> =
     async function ({ context, input, func, build }) {

@@ -63,7 +63,7 @@ export type MultipleObjectInfo<Id extends KEY> = {
     context,
     schema,
   }: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     cache: CacheController<A>;
     schema: O;
   }) {
@@ -167,7 +167,7 @@ export type MultipleObjectInfo<Id extends KEY> = {
     schema,
     ids,
   }: {
-    context: FUNCTIONS.Context;
+    context?: FUNCTIONS.Context;
     cache: CacheController<A>;
     schema: z.ZodRecord<Id, O>;
     ids: z.infer<Id>[];
