@@ -21,13 +21,13 @@ export function Wrapper<
   useHook,
 }: {
   _params: FUNCTIONS.AsyncFunction._Params<I, O, S, C>;
-  getHook(arg: { context: C; input: z.infer<I> }): H;
+  getHook(arg: { context?: C; input: z.infer<I> }): H;
   updateInput?(arg: {
     context: C;
     input: z.infer<I>;
     info: H extends Hook<infer Info, O> ? Info : unknown;
   }): z.infer<I>;
-  useHook?(hook: (arg: { context: C; input: z.infer<I> }) => H): void;
+  useHook?(hook: (arg: { context?: C; input: z.infer<I> }) => H): void;
 }): FUNCTIONS.AsyncFunction.WrapperBuild<I, O, S, C> & {
   getHook(arg: { context: C; input: z.infer<I> }): H;
   stateKey: FUNCTIONS.ContextStateKey<Awaited<ReturnType<H["get"]>>>;
@@ -38,9 +38,9 @@ export function Wrapper<
     label: "CacheResult",
     scope: "local",
   });
-  function getHook(arg: { context: C; input: z.infer<I> }): H {
+  function getHook(arg: { context?: C; input: z.infer<I> }): H {
     const hook = getHook_(arg);
-    Hook.updateContext(hook, arg.context);
+    if (arg.context) Hook.updateContext(hook, arg.context);
     Hook.updateSchema(hook, _params.output);
     return hook;
   }
