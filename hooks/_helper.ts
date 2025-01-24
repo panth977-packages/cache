@@ -23,7 +23,7 @@ export function extractFromPromise<T>(
     keys.map((k) => [k, promise.then((data) => data[k])])
   );
 }
-export abstract class Hook<Info, S extends z.ZodType> {
+export abstract class Hook<Info, S extends z.ZodType = any> {
   private context_?: FUNCTIONS.Context;
   private schema_?: S;
   get context(): FUNCTIONS.Context | undefined {
@@ -40,7 +40,7 @@ export abstract class Hook<Info, S extends z.ZodType> {
     getHook: (...input: I) => Hook<Info, O>,
     func: (info: Info, ...input: I) => Promise<z.infer<O>>
   ): (...input: I) => Promise<z.infer<O>> {
-    return async function (...arg) {
+    async function CacheFunc(...arg: I) {
       const hook = getHook(...arg);
       const result = await hook.get({ safe: !!hook.schema });
       if (hook.isIncomplete(result)) {
@@ -49,7 +49,8 @@ export abstract class Hook<Info, S extends z.ZodType> {
         hook.set({ output: result.val });
       }
       return result.val;
-    };
+    }
+    return Object.assign(CacheFunc, getHook);
   }
   static updateContext<Info, O extends z.ZodType>(
     hook: Hook<Info, O>,

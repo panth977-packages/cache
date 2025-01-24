@@ -2,7 +2,6 @@ import type { z } from "zod";
 import { Hook } from "./hooks/index.ts";
 import { FUNCTIONS } from "@panth977/functions";
 
-
 /**
  * A simple wrapper, to create a cache layer.
  * @param _params
@@ -16,6 +15,7 @@ export function Wrapper<
   C extends FUNCTIONS.Context,
   H extends Hook<any, O>
 >({
+  _params,
   getHook: getHook_,
   updateInput,
   useHook,
@@ -32,13 +32,16 @@ export function Wrapper<
   getHook(arg: { context: C; input: z.infer<I> }): H;
   stateKey: FUNCTIONS.ContextStateKey<Awaited<ReturnType<H["get"]>>>;
 } {
-  const stateKey = FUNCTIONS.DefaultContextState.CreateKey<Awaited<ReturnType<H["get"]>>>({
+  const stateKey = FUNCTIONS.DefaultContextState.CreateKey<
+    Awaited<ReturnType<H["get"]>>
+  >({
     label: "CacheResult",
-    scope: 'local',
+    scope: "local",
   });
   function getHook(arg: { context: C; input: z.infer<I> }): H {
     const hook = getHook_(arg);
     Hook.updateContext(hook, arg.context);
+    Hook.updateSchema(hook, _params.output);
     return hook;
   }
   useHook?.(getHook);

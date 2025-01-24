@@ -54,7 +54,7 @@ export type MultipleObjectInfo<Id extends KEY> = {
  * ```
  */ export class SingleObject<
   A extends AbstractCacheClient,
-  O extends z.ZodType
+  O extends z.ZodType = any
 > extends Hook<SingleObjectInfo, O> {
   readonly cache: CacheController<A>;
   private get elementSchema() {
@@ -157,8 +157,8 @@ export type MultipleObjectInfo<Id extends KEY> = {
  * ```
  */ export class MultipleObject<
   A extends AbstractCacheClient,
-  O extends z.ZodType,
-  Id extends zKEY
+  O extends z.ZodType = any,
+  Id extends zKEY = any
 > extends Hook<MultipleObjectInfo<z.infer<Id>>, z.ZodRecord<Id, O>> {
   readonly cache: CacheController<A>;
   private get elementSchema() {

@@ -75,8 +75,8 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
  * ```
  */ export class SingleCollection<
   A extends AbstractCacheClient,
-  O extends z.ZodType,
-  SubId extends zKEY
+  O extends z.ZodType = any,
+  SubId extends zKEY = any
 > extends Hook<SingleCollectionInfo<z.infer<SubId>>, z.ZodRecord<SubId, O>> {
   readonly cache: CacheController<A>;
   private get elementSchema() {
@@ -284,9 +284,9 @@ export type MultipleCollectionInfo<Id extends KEY, SubId extends KEY> = {
  * ```
  */ export class MultipleCollection<
   A extends AbstractCacheClient,
-  O extends z.ZodType,
-  Id extends zKEY,
-  SubId extends zKEY
+  O extends z.ZodType = any,
+  Id extends zKEY = any,
+  SubId extends zKEY = any
 > extends Hook<
   MultipleCollectionInfo<z.infer<Id>, z.infer<SubId>>,
   z.ZodRecord<Id, z.ZodRecord<SubId, O>>
