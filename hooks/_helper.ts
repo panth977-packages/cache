@@ -25,7 +25,7 @@ export function extractFromPromise<T>(
 }
 export abstract class Hook<Info, O extends z.ZodType> {
   private context_?: FUNCTIONS.Context;
-  get context() {
+  get context(): FUNCTIONS.Context | undefined {
     return this.context_;
   }
   constructor(context?: FUNCTIONS.Context) {
