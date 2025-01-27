@@ -131,12 +131,12 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
       log: this.log,
     });
   }
-  addPrefix(prefix: string | number): CacheController<T> {
+  addPrefix(...prefix: (string | number)[]): CacheController<T> {
     return new CacheController({
       client: this.client,
       separator: this.separator,
       defaultExpiry: this.defaultExpiry,
-      prefix: this.getKey(prefix),
+      prefix: prefix.reduce<string>((x, p) => `${x}${this.separator}${p}`, this.prefix),
       allowed: this.allowed,
       log: this.log,
     });
