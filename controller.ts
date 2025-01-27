@@ -112,6 +112,7 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
     this.log = log;
   }
   getKey(key: string | number): string {
+    if (key === '') return this.prefix;
     return `${this.prefix}${this.separator}${key}`;
   }
   can(key: keyof Actions<T>): boolean {
