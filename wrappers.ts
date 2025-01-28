@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import { Hook } from "./hooks/_helper.ts";
+import { Hook } from "./hooks/index.ts";
 import { FUNCTIONS } from "@panth977/functions";
 
 /**
@@ -21,13 +21,13 @@ export function Wrapper<
   useHook,
 }: {
   _params: FUNCTIONS.AsyncFunction._Params<I, O, S, C>;
-  getHook(arg: { context?: C; input: z.infer<I> }): null | Hook<Info, O>;
+  getHook(arg: { context?: C; input: z.infer<I> }): Hook<Info, O>;
   updateInput?(arg: { context: C; input: z.infer<I>; info: Info }): z.infer<I>;
   useHook?(
-    hook: (arg: { context?: C; input: z.infer<I> }) => null | Hook<Info, O>
+    hook: (arg: { context?: C; input: z.infer<I> }) => Hook<Info, O>
   ): void;
 }): FUNCTIONS.AsyncFunction.WrapperBuild<I, O, S, C> & {
-  getHook(arg: { context: C; input: z.infer<I> }): null | Hook<Info, O>;
+  getHook(arg: { context: C; input: z.infer<I> }): Hook<Info, O>;
   stateKey: FUNCTIONS.ContextStateKey<
     Awaited<ReturnType<Hook<Info, O>["get"]>>
   >;
@@ -38,9 +38,8 @@ export function Wrapper<
     label: "CacheResult",
     scope: "local",
   });
-  function getHook(arg: { context?: C; input: z.infer<I> }): null | Hook<Info, O> {
+  function getHook(arg: { context?: C; input: z.infer<I> }): Hook<Info, O> {
     const hook = getHook_(arg);
-    if (!hook) return null;
     if (arg.context) Hook.updateContext(hook, arg.context);
     Hook.updateSchema(hook, _params.output);
     return hook;
@@ -49,9 +48,6 @@ export function Wrapper<
   const Wrapper: FUNCTIONS.AsyncFunction.WrapperBuild<I, O, S, C> =
     async function ({ context, input, func, build }) {
       const hook = getHook({ context, input });
-      if (!hook) {
-        return await func({ context, input, build });
-      }
       const result = await hook.get({ safe: true });
       context.useState(stateKey).set(result as never);
       if (hook.isIncomplete(result)) {

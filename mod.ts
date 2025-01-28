@@ -4,14 +4,19 @@
  * - {@link CACHE.AbstractCacheClient}
  * - {@link CACHE.CacheController}
  * 
- * # Wrappers Apis
+ * # Hooks Apis
+ * - {@link CACHE.HOOKS.Hook}
  * - {@link CACHE.HOOKS.SingleObject}
  * - {@link CACHE.HOOKS.MultipleObject}
  * - {@link CACHE.HOOKS.SingleCollection}
  * - {@link CACHE.HOOKS.MultipleCollection}
  * 
+ * # Wrapper Apis
+ * - {@link CACHE.Wrap}
+ * - {@link CACHE.Wrapper}
+ * 
  * # Client
- * - {@link CACHE.CacheController}
+ * - {@link CACHE.MemoCacheClient}
  * 
  * @module
  * 
