@@ -51,7 +51,7 @@ export abstract class Hook<Info, S extends z.ZodType = any> {
     return hook;
   }
   abstract isIncomplete(arg: { info: Info }): boolean;
-  abstract exists(arg: Record<never, never>): Promise<Info>;
+  abstract exists(): Promise<Info>;
   abstract get(arg: {
     safe?: boolean;
   }): Promise<{ val: z.infer<S>; info: Info }>;
@@ -59,7 +59,7 @@ export abstract class Hook<Info, S extends z.ZodType = any> {
     output: SyncOrPromise<z.infer<S>>;
     ifExists?: boolean;
   }): Promise<void>;
-  abstract del(arg: Record<never, never>): Promise<void>;
+  abstract del(): Promise<void>;
   abstract merge(arg: {
     target: z.infer<S>;
     extension: z.infer<S>;
