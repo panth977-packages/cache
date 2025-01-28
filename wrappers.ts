@@ -13,7 +13,7 @@ export function Wrapper<
   O extends z.ZodType,
   S extends Record<never, never>,
   C extends FUNCTIONS.Context,
-  H extends Hook<any, O>
+  Info
 >({
   _params,
   getHook: getHook_,
@@ -21,24 +21,24 @@ export function Wrapper<
   useHook,
 }: {
   _params: FUNCTIONS.AsyncFunction._Params<I, O, S, C>;
-  getHook(arg: { context?: C; input: z.infer<I> }): H;
-  updateInput?(arg: {
-    context: C;
-    input: z.infer<I>;
-    info: H extends Hook<infer Info, O> ? Info : unknown;
-  }): z.infer<I>;
-  useHook?(hook: (arg: { context?: C; input: z.infer<I> }) => H): void;
+  getHook(arg: { context?: C; input: z.infer<I> }): Hook<Info, O>;
+  updateInput?(arg: { context: C; input: z.infer<I>; info: Info }): z.infer<I>;
+  useHook?(
+    hook: (arg: { context?: C; input: z.infer<I> }) => Hook<Info, O>
+  ): void;
 }): FUNCTIONS.AsyncFunction.WrapperBuild<I, O, S, C> & {
-  getHook(arg: { context: C; input: z.infer<I> }): H;
-  stateKey: FUNCTIONS.ContextStateKey<Awaited<ReturnType<H["get"]>>>;
+  getHook(arg: { context: C; input: z.infer<I> }): Hook<Info, O>;
+  stateKey: FUNCTIONS.ContextStateKey<
+    Awaited<ReturnType<Hook<Info, O>["get"]>>
+  >;
 } {
   const stateKey = FUNCTIONS.DefaultContextState.CreateKey<
-    Awaited<ReturnType<H["get"]>>
+    Awaited<ReturnType<Hook<Info, O>["get"]>>
   >({
     label: "CacheResult",
     scope: "local",
   });
-  function getHook(arg: { context?: C; input: z.infer<I> }): H {
+  function getHook(arg: { context?: C; input: z.infer<I> }): Hook<Info, O> {
     const hook = getHook_(arg);
     if (arg.context) Hook.updateContext(hook, arg.context);
     Hook.updateSchema(hook, _params.output);
