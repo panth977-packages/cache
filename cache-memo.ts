@@ -48,7 +48,9 @@ export class MemoCacheClient extends AbstractCacheClient {
         ? keyValue.then((x) => x !== undefined)
         : false;
     if (log) {
-      (context ?? console).log(`(${timer()} ms) ${this.name}.exists(${key}) ✅`);
+      (context ?? console).log(
+        `(${timer()} ms) ${this.name}.exists(${key}) ✅`
+      );
     }
     return value;
   }
@@ -158,7 +160,7 @@ export class MemoCacheClient extends AbstractCacheClient {
 
   override async writeKey<T>({
     context,
-    expire,
+    expiry,
     key,
     value,
     log,
@@ -166,7 +168,7 @@ export class MemoCacheClient extends AbstractCacheClient {
     context?: FUNCTIONS.Context;
     key: KEY;
     value: T | Promise<T>;
-    expire: number;
+    expiry: number;
     log?: boolean;
   }): Promise<void> {
     const timer = time();
@@ -177,11 +179,11 @@ export class MemoCacheClient extends AbstractCacheClient {
     this.memo[key] = (
       value instanceof Promise ? value : Promise.resolve(value)
     ).catch(() => undefined);
-    if (expire > 0) {
+    if (expiry > 0) {
       this.exp[key] = setTimeout(() => {
         delete this.memo[key];
         delete this.exp[key];
-      }, expire);
+      }, expiry);
     }
     if (log) {
       (context ?? console).log(`(${timer()} ms) ${this.name}.write(${key}) ✅`);
@@ -189,7 +191,7 @@ export class MemoCacheClient extends AbstractCacheClient {
   }
   override async writeHashFields<T extends Record<string, unknown>>({
     context,
-    expire,
+    expiry,
     key,
     value,
     log,
@@ -197,7 +199,7 @@ export class MemoCacheClient extends AbstractCacheClient {
     context?: FUNCTIONS.Context;
     key: KEY;
     value: Promise<T> | { [k in keyof T]: Promise<T[k]> | T[k] };
-    expire: number;
+    expiry: number;
     log?: boolean;
   }): Promise<void> {
     const timer = time();
@@ -215,11 +217,11 @@ export class MemoCacheClient extends AbstractCacheClient {
         ).catch(() => undefined),
       ])
     );
-    if (expire > 0) {
+    if (expiry > 0) {
       this.exp[key] = setTimeout(() => {
         delete this.memo[key];
         delete this.exp[key];
-      }, expire);
+      }, expiry);
     }
     if (log) {
       (context ?? console).log(
@@ -249,7 +251,9 @@ export class MemoCacheClient extends AbstractCacheClient {
       }
     }
     if (log) {
-      (context ?? console).log(`(${timer()} ms) ${this.name}.remove(${key}) ✅`);
+      (context ?? console).log(
+        `(${timer()} ms) ${this.name}.remove(${key}) ✅`
+      );
     }
   }
   override async removeHashFields({
@@ -285,5 +289,11 @@ export class MemoCacheClient extends AbstractCacheClient {
         }) ✅`
       );
     }
+  }
+  override async incrementKey(): Promise<{ allowed: boolean; value: number }> {
+    throw new Error('Unimplemented!')
+  }
+  override async incrementHashField(): Promise<{ allowed: boolean; value: number }> {
+    throw new Error('Unimplemented!')
   }
 }

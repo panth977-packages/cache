@@ -17,7 +17,8 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
     | "exists"
     | "read"
     | "write"
-    | "remove",
+    | "remove"
+    | "increment",
     boolean
   >
 >;
@@ -55,14 +56,14 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
     context?: FUNCTIONS.Context;
     key: KEY;
     value: T | Promise<T>;
-    expire: number;
+    expiry: number;
     log?: boolean;
   }): Promise<void>;
   abstract writeHashFields<T extends Record<string, unknown>>(arg: {
     context?: FUNCTIONS.Context;
     key: KEY;
     value: Promise<T> | { [k in keyof T]: Promise<T[k]> | T[k] };
-    expire: number;
+    expiry: number;
     log?: boolean;
   }): Promise<void>;
   abstract removeKey(arg: {
@@ -76,6 +77,23 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
     fields: KEY[] | AllFields;
     log?: boolean;
   }): Promise<void>;
+  abstract incrementKey(arg: {
+    context?: FUNCTIONS.Context;
+    key: KEY;
+    incrBy: number;
+    maxLimit?: number;
+    expiry: number;
+    log?: boolean;
+  }): Promise<{ allowed: boolean; value: number }>;
+  abstract incrementHashField(arg: {
+    context?: FUNCTIONS.Context;
+    key: KEY;
+    field?: KEY;
+    incrBy: number;
+    maxLimit?: number;
+    expiry: number;
+    log?: boolean;
+  }): Promise<{ allowed: boolean; value: number }>;
 }
 
 /**
@@ -112,7 +130,7 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
     this.log = log;
   }
   getKey(key: string | number): string {
-    if (key === '') return this.prefix;
+    if (key === "") return this.prefix;
     return `${this.prefix}${this.separator}${key}`;
   }
   can(key: keyof Actions<T>): boolean {
@@ -137,7 +155,10 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
       client: this.client,
       separator: this.separator,
       defaultExpiry: this.defaultExpiry,
-      prefix: prefix.reduce<string>((x, p) => `${x}${this.separator}${p}`, this.prefix),
+      prefix: prefix.reduce<string>(
+        (x, p) => `${x}${this.separator}${p}`,
+        this.prefix
+      ),
       allowed: this.allowed,
       log: this.log,
     });
@@ -245,7 +266,7 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
     context?: FUNCTIONS.Context;
     key?: KEY;
     value: T | Promise<T>;
-    expire?: number;
+    expiry?: number;
   }): Promise<void> {
     if (!this.can("write")) return;
     await this.client
@@ -253,7 +274,7 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
         context,
         key: this.getKey(`${params.key ?? ""}`),
         value: params.value,
-        expire: params.expire ?? this.defaultExpiry,
+        expiry: params.expiry ?? this.defaultExpiry,
         log: this.log,
       })
       .catch(() => {});
@@ -265,7 +286,7 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
     context?: FUNCTIONS.Context;
     key?: KEY;
     value: T | Promise<T>;
-    expire?: number;
+    expiry?: number;
   }): Promise<void> {
     if (!this.can("write")) return;
     await this.client
@@ -273,7 +294,7 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
         context,
         key: this.getKey(`${params.key ?? ""}`),
         value: params.value,
-        expire: params.expire ?? this.defaultExpiry,
+        expiry: params.expiry ?? this.defaultExpiry,
         log: this.log,
       })
       .catch(() => {});
@@ -292,7 +313,7 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
         key: this.getKey(`${params.key ?? ""}`),
         log: this.log,
       })
-      .catch(() => undefined);
+      .catch(() => {});
   }
   async removeHashFields({
     context,
@@ -310,7 +331,53 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
         fields: params.fields ?? "*",
         log: this.log,
       })
-      .catch(() => ({}));
+      .catch(() => {});
+  }
+  async incrementKey({
+    context,
+    ...params
+  }: {
+    context?: FUNCTIONS.Context;
+    key?: KEY;
+    incrBy: number;
+    maxLimit?: number;
+    expiry: number;
+  }): Promise<{ allowed: boolean; value: number }> {
+    if (!this.can("increment")) return { allowed: false, value: 0 };
+    return await this.client
+      .incrementKey({
+        context,
+        key: this.getKey(`${params.key ?? ""}`),
+        expiry: params.expiry ?? this.defaultExpiry,
+        incrBy: params.incrBy,
+        maxLimit: params.maxLimit,
+        log: this.log,
+      })
+      .catch(() => ({ allowed: false, value: 0 }));
+  }
+  async incrementHashField({
+    context,
+    ...params
+  }: {
+    context?: FUNCTIONS.Context;
+    key?: KEY;
+    field: KEY;
+    incrBy: number;
+    maxLimit?: number;
+    expiry?: number;
+  }): Promise<{ allowed: boolean; value: number }> {
+    if (!this.can("increment")) return { allowed: false, value: 0 };
+    return await this.client
+      .incrementHashField({
+        context,
+        key: this.getKey(`${params.key ?? ""}`),
+        field: params.field,
+        expiry: params.expiry ?? this.defaultExpiry,
+        incrBy: params.incrBy,
+        maxLimit: params.maxLimit,
+        log: this.log,
+      })
+      .catch(() => ({ allowed: false, value: 0 }));
   }
   /* Extensions */
   run<K extends ExtendedFuncNames<T>>({
