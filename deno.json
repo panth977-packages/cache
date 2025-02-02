@@ -1,6 +1,6 @@
 {
   "name": "@panth977/cache",
-  "version": "0.2.24",
+  "version": "0.2.25",
   "exports": "./mod.ts",
   "license": "MIT",
   "tasks": {
