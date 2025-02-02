@@ -82,7 +82,7 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
     key: KEY;
     incrBy: number;
     maxLimit?: number;
-    expiry: number;
+    expiry?: number;
     log?: boolean;
   }): Promise<{ allowed: boolean; value: number }>;
   abstract incrementHashField(arg: {
@@ -341,7 +341,7 @@ type Actions<T extends AbstractCacheClient> = { "*": boolean } & Partial<
     key?: KEY;
     incrBy: number;
     maxLimit?: number;
-    expiry: number;
+    expiry?: number;
   }): Promise<{ allowed: boolean; value: number }> {
     if (!this.can("increment")) return { allowed: false, value: 0 };
     return await this.client
