@@ -1,12 +1,21 @@
-// deno-lint-ignore-file require-await
-import { AbstractCacheClient, type AllFields, type KEY } from "./controller.ts";
-import type { FUNCTIONS } from "@panth977/functions";
+import { type AllFields, CacheController, type KEY } from "./controller.ts";
+import { F } from "@panth977/functions";
 
-function time() {
-  const start = Date.now();
-  return function () {
-    return Date.now() - start;
-  };
+class Obj<T = any> {
+  val: T;
+  timeout: ReturnType<typeof setTimeout>;
+  constructor(val: T, timeout: ReturnType<typeof setTimeout>) {
+    this.val = val;
+    this.timeout = timeout;
+  }
+}
+class Hash<T extends Record<string, any> = Record<string, any>> {
+  val: Partial<T>;
+  timeout: ReturnType<typeof setTimeout>;
+  constructor(val: Partial<T>, timeout: ReturnType<typeof setTimeout>) {
+    this.val = val;
+    this.timeout = timeout;
+  }
 }
 /**
  * @example
@@ -23,277 +32,230 @@ function time() {
  * })
  * ```
  */
-export class MemoCacheClient extends AbstractCacheClient {
-  readonly memo: Record<
-    KEY,
-    Promise<unknown> | Record<string, Promise<unknown>>
-  > = {};
-  readonly exp: Record<KEY, ReturnType<typeof setTimeout>> = {};
-  constructor() {
-    super("Memo");
-  }
-  override async existsKey({
-    context,
-    key,
-    log,
-  }: {
-    context?: FUNCTIONS.Context;
-    key: KEY;
-    log?: boolean;
-  }): Promise<boolean> {
-    const timer = time();
-    const keyValue = this.memo[key];
-    const value =
-      keyValue instanceof Promise
-        ? keyValue.then((x) => x !== undefined)
-        : false;
-    if (log) {
-      (context ?? console).log(
-        `(${timer()} ms) ${this.name}.exists(${key}) ✅`
-      );
-    }
-    return value;
-  }
-  override async existsHashFields({
-    context,
-    fields,
-    key,
-    log,
-  }: {
-    context?: FUNCTIONS.Context;
-    key: KEY;
-    fields: AllFields | KEY[];
-    log?: boolean;
-  }): Promise<Record<string, boolean>> {
-    const timer = time();
-    const hashValue = this.memo[key];
-    const value =
-      hashValue instanceof Promise
-        ? {}
-        : fields === "*"
-        ? Object.fromEntries(
-            await Promise.all(
-              Object.keys(hashValue).map(
-                async (x) =>
-                  [x, await hashValue[x].then((x) => x !== undefined)] as const
-              )
-            ).then((x) => x.filter((x) => x[1]))
-          )
-        : Object.fromEntries(
-            await Promise.all(
-              fields.map(
-                async (x) =>
-                  [x, await hashValue[x].then((x) => x !== undefined)] as const
-              )
-            )
-          );
-    if (log) {
-      (context ?? console).log(
-        `(${timer()} ms) ${this.name}.exists(${key}, ${
-          fields === "*" ? "*" : `[${fields}]`
-        }) ✅`
-      );
-    }
-    return value;
-  }
-
-  override async readKey<T>({
-    context,
-    key,
-    log,
-  }: {
-    context?: FUNCTIONS.Context;
-    key: KEY;
-    log?: boolean;
-  }): Promise<T | undefined> {
-    const timer = time();
-    const keyValue = this.memo[key];
-    const value = keyValue instanceof Promise ? await keyValue : undefined;
-    if (log) {
-      (context ?? console).log(`(${timer()} ms) ${this.name}.read(${key}) ✅`);
-    }
-    return value as T | undefined;
-  }
-  override async readHashFields<T extends Record<string, unknown>>({
-    context,
-    fields,
-    key,
-    log,
-  }: {
-    context?: FUNCTIONS.Context;
-    key: KEY;
-    fields: AllFields | KEY[];
-    log?: boolean;
-  }): Promise<Partial<T>> {
-    const timer = time();
-    const hashValue = this.memo[key];
-    const value =
-      hashValue instanceof Promise
-        ? {}
-        : fields === "*"
-        ? Object.fromEntries(
-            await Promise.all(
-              Object.keys(hashValue).map(
-                async (x) => [x, await hashValue[x]] as const
-              )
-            )
-          )
-        : Object.fromEntries(
-            await Promise.all(
-              fields.map(async (x) => [x, await hashValue[x]] as const)
-            )
-          );
-    if (log) {
-      (context ?? console).log(
-        `(${timer()} ms) ${this.name}.read(${key}, ${
-          fields === "*" ? "*" : `[${fields}]`
-        }) ✅`
-      );
-    }
-    for (const key in value) {
-      if (value[key] === undefined) {
-        delete value[key];
-      }
-    }
-    return value as Partial<T>;
-  }
-
-  override async writeKey<T>({
-    context,
-    expiry,
-    key,
-    value,
-    log,
-  }: {
-    context?: FUNCTIONS.Context;
-    key: KEY;
-    value: T | Promise<T>;
+export class MemoCacheClient extends CacheController {
+  readonly memo: Map<KEY, Obj | Hash>;
+  constructor(opt: {
+    name: string;
+    separator: string;
     expiry: number;
-    log?: boolean;
-  }): Promise<void> {
-    const timer = time();
-    if (key in this.exp) {
-      clearTimeout(this.exp[key]);
-      delete this.exp[key];
-    }
-    this.memo[key] = (
-      value instanceof Promise ? value : Promise.resolve(value)
-    ).catch(() => undefined);
-    if (expiry > 0) {
-      this.exp[key] = setTimeout(() => {
-        delete this.memo[key];
-        delete this.exp[key];
-      }, expiry);
-    }
-    if (log) {
-      (context ?? console).log(`(${timer()} ms) ${this.name}.write(${key}) ✅`);
-    }
+    prefix: string;
+    log: boolean;
+    mode: "read-write" | "readonly" | "writeonly";
+  }, memo?: Map<KEY, Obj | Hash>) {
+    super(opt);
+    this.memo = memo ?? new Map();
   }
-  override async writeHashFields<T extends Record<string, unknown>>({
-    context,
-    expiry,
-    key,
-    value,
-    log,
-  }: {
-    context?: FUNCTIONS.Context;
-    key: KEY;
-    value: Promise<T> | { [k in keyof T]: Promise<T[k]> | T[k] };
-    expiry: number;
-    log?: boolean;
-  }): Promise<void> {
-    const timer = time();
-    if (key in this.exp) {
-      clearTimeout(this.exp[key]);
-      delete this.exp[key];
+  override existsKeyCb(
+    context: F.Context,
+    opt: { key?: KEY },
+  ): F.AsyncCbReceiver<boolean> {
+    if (this.canExeExists()) {
+      return F.AsyncCbReceiver.error(new Error("Method not allowed"));
     }
-    const awaitedValue = value instanceof Promise ? await value : value;
-    this.memo[key] = Object.fromEntries(
-      Object.keys(awaitedValue).map((x) => [
-        x,
-        (awaitedValue[x] instanceof Promise
-          ? awaitedValue[x]
-          : Promise.resolve(awaitedValue[x])
-        ).catch(() => undefined),
-      ])
-    );
-    if (expiry > 0) {
-      this.exp[key] = setTimeout(() => {
-        delete this.memo[key];
-        delete this.exp[key];
-      }, expiry);
+    const key = this._getKey(opt.key);
+    const exists = key in this.memo;
+    if (this.log) {
+      context.logMsg(`${this.name}.exists(${key})`, "");
     }
-    if (log) {
-      (context ?? console).log(
-        `(${timer()} ms) ${this.name}.write(${key}, [${
-          //
-          Object.keys(awaitedValue)
-        }]) ✅`
-      );
-    }
+    return F.AsyncCbReceiver.value(exists);
   }
-
-  override async removeKey({
-    context,
-    key,
-    log,
-  }: {
-    context?: FUNCTIONS.Context;
-    key: KEY;
-    log?: boolean;
-  }): Promise<void> {
-    const timer = time();
-    if (this.memo[key] instanceof Promise) {
-      delete this.memo[key];
-      if (key in this.exp) {
-        clearTimeout(this.exp[key]);
-        delete this.exp[key];
-      }
+  override existsHashFieldsCb(
+    context: F.Context,
+    opt: { key?: KEY; fields: Array<KEY> | AllFields },
+  ): F.AsyncCbReceiver<Record<string, boolean>> {
+    if (this.canExeExists()) {
+      return F.AsyncCbReceiver.error(new Error("Method not allowed"));
     }
-    if (log) {
-      (context ?? console).log(
-        `(${timer()} ms) ${this.name}.remove(${key}) ✅`
-      );
+    const key = this._getKey(opt.key);
+    const hashValue = this.memo.get(key);
+    if (this.log) {
+      context.logMsg(`${this.name}.exists(${key}, [${opt.fields}])`, "");
     }
-  }
-  override async removeHashFields({
-    context,
-    fields,
-    key,
-    log,
-  }: {
-    context?: FUNCTIONS.Context;
-    key: KEY;
-    fields: AllFields | KEY[];
-    log?: boolean;
-  }): Promise<void> {
-    const timer = time();
-    const hashValue = this.memo[key];
-    if (hashValue instanceof Promise === false) {
-      if (fields === "*") {
-        delete this.memo[key];
-        if (key in this.exp) {
-          clearTimeout(this.exp[key]);
-          delete this.exp[key];
+    if (!hashValue) {
+      return F.AsyncCbReceiver.value({});
+    } else if (hashValue instanceof Hash === false) {
+      return F.AsyncCbReceiver.error(new Error("Invalid hash value"));
+    } else {
+      const fieldsExists: Record<string, boolean> = {};
+      if (opt.fields === "*") {
+        for (const field in hashValue.val) {
+          fieldsExists[field] = true;
         }
-      } else if (hashValue) {
-        for (const x of fields) {
-          delete hashValue[x];
+      } else {
+        for (const field of opt.fields) {
+          fieldsExists[field] = field in hashValue.val;
         }
       }
-    }
-    if (log) {
-      (context ?? console).log(
-        `(${timer()} ms) ${this.name}.remove(${key}, ${
-          fields === "*" ? "*" : `[${fields}]`
-        }) ✅`
-      );
+      return F.AsyncCbReceiver.value(fieldsExists);
     }
   }
-  override async incrementKey(): Promise<{ allowed: boolean; value: number }> {
-    throw new Error('Unimplemented!')
+  override readKeyCb<T>(
+    context: F.Context,
+    opt: { key?: KEY },
+  ): F.AsyncCbReceiver<T | undefined> {
+    if (this.canExeRead()) {
+      return F.AsyncCbReceiver.error(new Error("Method not allowed"));
+    }
+    const start = Date.now();
+    const key = this._getKey(opt.key);
+    const value = this.memo.get(key) as Obj<T>;
+    if (this.log) {
+      context.logMsg(`${this.name}.read(${key})`, `${Date.now() - start} ms`);
+    }
+    if (!value) {
+      return F.AsyncCbReceiver.value<T | undefined>(undefined);
+    } else if (value instanceof Obj === false) {
+      return F.AsyncCbReceiver.error(new Error("Invalid value"));
+    } else {
+      return F.AsyncCbReceiver.value<T | undefined>(value.val);
+    }
   }
-  override async incrementHashField(): Promise<{ allowed: boolean; value: number }> {
-    throw new Error('Unimplemented!')
+  override readHashFieldsCb<T extends Record<string, unknown>>(
+    context: F.Context,
+    opt: { key?: KEY; fields: KEY[] | AllFields },
+  ): F.AsyncCbReceiver<Partial<T>> {
+    if (this.canExeRead()) {
+      return F.AsyncCbReceiver.error(new Error("Method not allowed"));
+    }
+    const start = Date.now();
+    const key = this._getKey(opt.key);
+    const hashValue = this.memo.get(key) as Hash<T>;
+    if (this.log) {
+      context.logMsg(`${this.name}.read(${key}, [${opt.fields}])`, `${Date.now() - start} ms`);
+    }
+    if (!hashValue) {
+      return F.AsyncCbReceiver.value({});
+    } else if (hashValue instanceof Hash === false) {
+      return F.AsyncCbReceiver.error(new Error("Invalid hash value"));
+    } else {
+      if (opt.fields === "*") {
+        return F.AsyncCbReceiver.value({ ...hashValue.val });
+      } else {
+        const fieldsExists: Partial<T> = {};
+        for (const field of opt.fields) {
+          (fieldsExists as any)[field] = hashValue.val[field];
+        }
+        return F.AsyncCbReceiver.value(fieldsExists);
+      }
+    }
+  }
+  override writeKeyCb<T>(
+    context: F.Context,
+    opt: { key?: KEY; value: T },
+  ): F.AsyncCbReceiver<void> {
+    if (this.canExeWrite()) {
+      return F.AsyncCbReceiver.error(new Error("Method not allowed"));
+    }
+    const start = Date.now();
+    const key = this._getKey(opt.key);
+    const value = this.memo.get(key);
+    if (value) clearTimeout(value.timeout);
+    const timeout = setTimeout(this.memo.delete.bind(this.memo, key), this.expiry);
+    this.memo.set(key, new Obj(opt.value, timeout));
+    if (this.log) {
+      context.logMsg(`${this.name}.write(${key})`, `${Date.now() - start} ms`);
+    }
+    return F.AsyncCbReceiver.value<void>(undefined);
+  }
+  override writeHashFieldsCb<T extends Record<string, unknown>>(
+    context: F.Context,
+    opt: { key?: KEY; value: T },
+  ): F.AsyncCbReceiver<void> {
+    if (this.canExeWrite()) {
+      return F.AsyncCbReceiver.error(new Error("Method not allowed"));
+    }
+    const start = Date.now();
+    const key = this._getKey(opt.key);
+    const value = this.memo.get(key);
+    if (value instanceof Hash) {
+      Object.assign(value.val, opt.value);
+    } else {
+      if (value) clearTimeout(value.timeout);
+      const timeout = setTimeout(this.memo.delete.bind(this.memo, key), this.expiry);
+      this.memo.set(key, new Hash({ ...opt.value }, timeout));
+    }
+    if (this.log) {
+      context.logMsg(`${this.name}.write(${key}, [${Object.keys(opt.value)}])`, `${Date.now() - start} ms`);
+    }
+    return F.AsyncCbReceiver.value<void>(undefined);
+  }
+
+  override removeKeyCb(
+    context: F.Context,
+    opt: { key?: KEY },
+  ): F.AsyncCbReceiver<void> {
+    if (this.canExeRemove()) {
+      return F.AsyncCbReceiver.error(new Error("Method not allowed"));
+    }
+    const start = Date.now();
+    const key = this._getKey(opt.key);
+    const value = this.memo.get(key);
+    if (value) clearTimeout(value.timeout);
+    this.memo.delete(key);
+    if (this.log) {
+      context.logMsg(`${this.name}.remove(${key})`, `${Date.now() - start} ms`);
+    }
+    return F.AsyncCbReceiver.value<void>(undefined);
+  }
+  override removeHashFieldsCb(
+    context: F.Context,
+    opt: { key?: KEY; fields: KEY[] | AllFields },
+  ): F.AsyncCbReceiver<void> {
+    if (this.canExeExists()) {
+      return F.AsyncCbReceiver.error(new Error("Method not allowed"));
+    }
+    const start = Date.now();
+    const key = this._getKey(opt.key);
+    const hashValue = this.memo.get(key);
+    if (this.log) {
+      context.logMsg(`${this.name}.remove(${key}, [${opt.fields}])`, `${Date.now() - start} ms`);
+    }
+    if (!hashValue) {
+      return F.AsyncCbReceiver.value<void>(undefined);
+    } else if (hashValue instanceof Hash === false) {
+      return F.AsyncCbReceiver.error(new Error("Invalid hash value"));
+    } else {
+      if (opt.fields === "*") {
+        clearTimeout(hashValue.timeout);
+        this.memo.delete(key);
+      } else {
+        for (const field of opt.fields) {
+          delete hashValue.val[field];
+        }
+        if (Object.keys(hashValue.val).length === 0) {
+          clearTimeout(hashValue.timeout);
+          this.memo.delete(key);
+        }
+      }
+      return F.AsyncCbReceiver.value<void>(undefined);
+    }
+  }
+  override incrementKeyCb(
+    _c: F.Context,
+    _i: { key?: KEY; incrBy: number; maxLimit: number },
+  ): F.AsyncCbReceiver<{ allowed: boolean; value: number }> {
+    return F.AsyncCbReceiver.error(new Error("Unimplemented!"));
+  }
+  override incrementHashFieldCb(
+    _c: F.Context,
+    _i: { key?: KEY; field: KEY; incrBy: number; maxLimit: number },
+  ): F.AsyncCbReceiver<{ allowed: boolean; value: number }> {
+    return F.AsyncCbReceiver.error(new Error("Unimplemented!"));
+  }
+  override dispose(): void {
+    for (const value of this.memo.values()) {
+      clearTimeout(value.timeout);
+    }
+    this.memo.clear();
+  }
+  protected override clone(): this {
+    return new MemoCacheClient({
+      expiry: this.expiry,
+      log: this.log,
+      mode: this.mode,
+      name: this.name,
+      prefix: this.prefix,
+      separator: this.separator,
+    }, this.memo) as this;
   }
 }

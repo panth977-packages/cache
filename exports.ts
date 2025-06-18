@@ -4,6 +4,5 @@
  */
 
 export * from "./controller.ts";
-export * from "./wrappers.ts";
 export * from "./cache-memo.ts";
-export * as HOOKS from "./hooks/index.ts";
+export * from "./wrappers/index.ts";

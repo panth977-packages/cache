@@ -1,31 +1,23 @@
-
 /**
  * # Base Controller Class
- * - {@link CACHE.AbstractCacheClient}
- * - {@link CACHE.CacheController}
- * 
- * # Hooks Apis
- * - {@link CACHE.HOOKS.Hook}
- * - {@link CACHE.HOOKS.SingleObject}
- * - {@link CACHE.HOOKS.MultipleObject}
- * - {@link CACHE.HOOKS.SingleCollection}
- * - {@link CACHE.HOOKS.MultipleCollection}
- * 
- * # Wrapper Apis
- * - {@link CACHE.Wrap}
- * - {@link CACHE.Wrapper}
- * 
+ * - {@link C.CacheController}
+ *
  * # Client
- * - {@link CACHE.MemoCacheClient}
- * 
+ * - {@link C.MemoCacheClient}
+ *
+ * # Hooks Apis
+ * - {@link C.WFObjectCache}
+ * - {@link C.WFMultiObjectCache}
+ * - {@link C.WFCollectionCache}
+ *
  * @module
- * 
+ *
  * @example
  * ```ts
- * import { CACHE } from "@panth977/cache";
+ * import { C } from "@panth977/cache";
  *
- * CACHE.[api];
+ * C.[api];
  * ```
  */
 
-export * as CACHE from "./exports.ts";
+export * as C from "./exports.ts";

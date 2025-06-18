@@ -1,30 +1,34 @@
 {
   "version": "4",
   "specifiers": {
-    "jsr:@panth977/functions@~0.2.8": "0.2.8",
-    "npm:crypto@1": "1.0.1",
-    "npm:zod@^3.23.0": "3.23.8"
+    "jsr:@panth977/functions@^1.0.13": "1.0.13",
+    "jsr:@panth977/tools@^1.0.6": "1.0.6",
+    "npm:zod@^3.25.0": "3.25.55"
   },
   "jsr": {
-    "@panth977/functions@0.2.8": {
-      "integrity": "3b9c1ddbe9430c5a7cc94eab858917d10db268169e550d19e4fa8bac98462673",
+    "@panth977/functions@1.0.13": {
+      "integrity": "3717c58f659705eb2b16765131aa4610f235ac4e74a1fdc2da0330217d46901d",
       "dependencies": [
-        "npm:crypto"
+        "npm:zod"
+      ]
+    },
+    "@panth977/tools@1.0.6": {
+      "integrity": "e9ad1e1a3179a525c0c4064cec43ae9e97a05978852d4a5615a3c456871ce022",
+      "dependencies": [
+        "npm:zod"
       ]
     }
   },
   "npm": {
-    "crypto@1.0.1": {
-      "integrity": "sha512-VxBKmeNcqQdiUQUW2Tzq0t377b54N2bMtXO/qiLa+6eRRmmC4qT3D4OnTGoT/U6O9aklQ/jTwbOtRMTTY8G0Ig=="
-    },
-    "zod@3.23.8": {
-      "integrity": "sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g=="
+    "zod@3.25.55": {
+      "integrity": "sha512-219huNnkSLQnLsQ3uaRjXsxMrVm5C9W3OOpEVt2k5tvMKuA8nBSu38e0B//a+he9Iq2dvmk2VyYVlHqiHa4YBA=="
     }
   },
   "workspace": {
     "dependencies": [
-      "jsr:@panth977/functions@~0.2.8",
-      "npm:zod@^3.23.0"
+      "jsr:@panth977/functions@^1.0.13",
+      "jsr:@panth977/tools@^1.0.6",
+      "npm:zod@^3.25.0"
     ]
   }
 }
