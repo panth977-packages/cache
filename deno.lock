@@ -1,34 +1,35 @@
 {
   "version": "4",
   "specifiers": {
-    "jsr:@panth977/functions@^1.0.13": "1.0.13",
-    "jsr:@panth977/tools@^1.0.6": "1.0.6",
-    "npm:zod@^3.25.0": "3.25.55"
+    "jsr:@panth977/functions@^1.0.14": "1.0.14",
+    "jsr:@panth977/tools@^1.0.8": "1.0.8",
+    "npm:zod@^3.25.0": "3.25.67",
+    "npm:zod@^3.25.67": "3.25.67"
   },
   "jsr": {
-    "@panth977/functions@1.0.13": {
-      "integrity": "3717c58f659705eb2b16765131aa4610f235ac4e74a1fdc2da0330217d46901d",
+    "@panth977/functions@1.0.14": {
+      "integrity": "a094525fb4a759d3127c04d0eba4e15aa83e158caac2094040cbd09accb2e59c",
       "dependencies": [
-        "npm:zod"
+        "npm:zod@^3.25.67"
       ]
     },
-    "@panth977/tools@1.0.6": {
-      "integrity": "e9ad1e1a3179a525c0c4064cec43ae9e97a05978852d4a5615a3c456871ce022",
+    "@panth977/tools@1.0.8": {
+      "integrity": "2e5cf4208c4165489e2cd349a5bad397b400a58be5d40b7638d816052359a207",
       "dependencies": [
-        "npm:zod"
+        "npm:zod@^3.25.67"
       ]
     }
   },
   "npm": {
-    "zod@3.25.55": {
-      "integrity": "sha512-219huNnkSLQnLsQ3uaRjXsxMrVm5C9W3OOpEVt2k5tvMKuA8nBSu38e0B//a+he9Iq2dvmk2VyYVlHqiHa4YBA=="
+    "zod@3.25.67": {
+      "integrity": "sha512-idA2YXwpCdqUSKRCACDE6ItZD9TZzy3OZMtpfLoh6oPR47lipysRrJfjzMqFxQ3uJuUPyUeWe1r9vLH33xO/Qw=="
     }
   },
   "workspace": {
     "dependencies": [
-      "jsr:@panth977/functions@^1.0.13",
-      "jsr:@panth977/tools@^1.0.6",
-      "npm:zod@^3.25.0"
+      "jsr:@panth977/functions@^1.0.14",
+      "jsr:@panth977/tools@^1.0.8",
+      "npm:zod@^3.25.67"
     ]
   }
 }

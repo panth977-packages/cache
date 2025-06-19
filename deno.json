@@ -18,6 +18,6 @@
   "imports": {
     "@panth977/functions": "jsr:@panth977/functions@^1.0.x",
     "@panth977/tools": "jsr:@panth977/tools@^1.0.x",
-    "zod": "npm:zod@^3.25.x"
+    "zod": "npm:zod@^3.25.67"
   }
 }
