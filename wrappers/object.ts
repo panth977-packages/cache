@@ -2,6 +2,7 @@ import type { F } from "@panth977/functions";
 import { type AllowedTypes, WFGenericCache } from "./_helper.ts";
 import type z from "zod/v4";
 import type { CacheController } from "../exports.ts";
+import type { T } from "@panth977/tools";
 
 type Cache<I extends z.ZodType, O extends z.ZodType> = [CacheController, z.infer<I>, ...([z.infer<O>] | [])];
 const iController = 0;
@@ -48,8 +49,8 @@ export class WFObjectCache<I extends F.FuncInput, O extends F.FuncOutput, D exte
     const [controller] = this.getController(input);
     return [controller, input];
   }
-  protected override _getData(context: F.Context, cache: Cache<I, O>): F.AsyncCbReceiver<void> {
-    return cache[iController].readKeyCb<z.infer<O>>(context, {}).pipeThen((data) => {
+  protected override _getData(context: F.Context, cache: Cache<I, O>): T.PPromise<void> {
+    return cache[iController].readKeyCb<z.infer<O>>(context, {}).map((data) => {
       if (data === undefined) return;
       const value = this.func.output.parse(data);
       cache[iOutput] = value;
@@ -62,7 +63,7 @@ export class WFObjectCache<I extends F.FuncInput, O extends F.FuncOutput, D exte
   protected override _updatedInput(_context: F.Context, cache: Cache<I, O>): z.core.output<I> {
     return cache[iInput];
   }
-  protected override _setData(context: F.Context, cache: Cache<I, O>, output: z.core.output<O>): F.AsyncCbReceiver<void> {
+  protected override _setData(context: F.Context, cache: Cache<I, O>, output: z.core.output<O>): T.PPromise<void> {
     cache[iOutput] = output;
     return cache[iController].writeKeyCb<z.infer<O>>(context, { value: output });
   }
@@ -70,7 +71,7 @@ export class WFObjectCache<I extends F.FuncInput, O extends F.FuncOutput, D exte
     if (cache[iOutput] === undefined) throw new Error("Need to gothrough the [_getData] api");
     return cache[iOutput];
   }
-  protected override _delCache(context: F.Context, cache: Cache<I, O>): F.AsyncCbReceiver<void> {
+  protected override _delCache(context: F.Context, cache: Cache<I, O>): T.PPromise<void> {
     return cache[iController].removeKeyCb(context, {});
   }
 }

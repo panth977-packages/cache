@@ -1,5 +1,6 @@
+import { T } from "@panth977/tools";
 import { type AllFields, CacheController, type KEY } from "./controller.ts";
-import { F } from "@panth977/functions";
+import type { F } from "@panth977/functions";
 
 class Obj<T = any> {
   val: T;
@@ -48,23 +49,23 @@ export class MemoCacheClient extends CacheController {
   override existsKeyCb(
     context: F.Context,
     opt: { key?: KEY },
-  ): F.AsyncCbReceiver<boolean> {
+  ): T.PPromise<boolean> {
     if (this.canExeExists()) {
-      return F.AsyncCbReceiver.error(new Error("Method not allowed"));
+      return T.PPromise.reject(new Error("Method not allowed"));
     }
     const key = this._getKey(opt.key);
     const exists = key in this.memo;
     if (this.log) {
       context.logMsg(`${this.name}.exists(${key})`, "");
     }
-    return F.AsyncCbReceiver.value(exists);
+    return T.PPromise.resolve(exists);
   }
   override existsHashFieldsCb(
     context: F.Context,
     opt: { key?: KEY; fields: Array<KEY> | AllFields },
-  ): F.AsyncCbReceiver<Record<string, boolean>> {
+  ): T.PPromise<Record<string, boolean>> {
     if (this.canExeExists()) {
-      return F.AsyncCbReceiver.error(new Error("Method not allowed"));
+      return T.PPromise.reject(new Error("Method not allowed"));
     }
     const key = this._getKey(opt.key);
     const hashValue = this.memo.get(key);
@@ -72,9 +73,9 @@ export class MemoCacheClient extends CacheController {
       context.logMsg(`${this.name}.exists(${key}, [${opt.fields}])`, "");
     }
     if (!hashValue) {
-      return F.AsyncCbReceiver.value({});
+      return T.PPromise.resolve({});
     } else if (hashValue instanceof Hash === false) {
-      return F.AsyncCbReceiver.error(new Error("Invalid hash value"));
+      return T.PPromise.reject(new Error("Invalid hash value"));
     } else {
       const fieldsExists: Record<string, boolean> = {};
       if (opt.fields === "*") {
@@ -86,15 +87,15 @@ export class MemoCacheClient extends CacheController {
           fieldsExists[field] = field in hashValue.val;
         }
       }
-      return F.AsyncCbReceiver.value(fieldsExists);
+      return T.PPromise.resolve(fieldsExists);
     }
   }
   override readKeyCb<T>(
     context: F.Context,
     opt: { key?: KEY },
-  ): F.AsyncCbReceiver<T | undefined> {
+  ): T.PPromise<T | undefined> {
     if (this.canExeRead()) {
-      return F.AsyncCbReceiver.error(new Error("Method not allowed"));
+      return T.PPromise.reject(new Error("Method not allowed"));
     }
     const start = Date.now();
     const key = this._getKey(opt.key);
@@ -103,19 +104,19 @@ export class MemoCacheClient extends CacheController {
       context.logMsg(`${this.name}.read(${key})`, `${Date.now() - start} ms`);
     }
     if (!value) {
-      return F.AsyncCbReceiver.value<T | undefined>(undefined);
+      return T.PPromise.resolve<T | undefined>(undefined);
     } else if (value instanceof Obj === false) {
-      return F.AsyncCbReceiver.error(new Error("Invalid value"));
+      return T.PPromise.reject(new Error("Invalid value"));
     } else {
-      return F.AsyncCbReceiver.value<T | undefined>(value.val);
+      return T.PPromise.resolve<T | undefined>(value.val);
     }
   }
   override readHashFieldsCb<T extends Record<string, unknown>>(
     context: F.Context,
     opt: { key?: KEY; fields: KEY[] | AllFields },
-  ): F.AsyncCbReceiver<Partial<T>> {
+  ): T.PPromise<Partial<T>> {
     if (this.canExeRead()) {
-      return F.AsyncCbReceiver.error(new Error("Method not allowed"));
+      return T.PPromise.reject(new Error("Method not allowed"));
     }
     const start = Date.now();
     const key = this._getKey(opt.key);
@@ -124,27 +125,27 @@ export class MemoCacheClient extends CacheController {
       context.logMsg(`${this.name}.read(${key}, [${opt.fields}])`, `${Date.now() - start} ms`);
     }
     if (!hashValue) {
-      return F.AsyncCbReceiver.value({});
+      return T.PPromise.resolve({});
     } else if (hashValue instanceof Hash === false) {
-      return F.AsyncCbReceiver.error(new Error("Invalid hash value"));
+      return T.PPromise.reject(new Error("Invalid hash value"));
     } else {
       if (opt.fields === "*") {
-        return F.AsyncCbReceiver.value({ ...hashValue.val });
+        return T.PPromise.resolve({ ...hashValue.val });
       } else {
         const fieldsExists: Partial<T> = {};
         for (const field of opt.fields) {
           (fieldsExists as any)[field] = hashValue.val[field];
         }
-        return F.AsyncCbReceiver.value(fieldsExists);
+        return T.PPromise.resolve(fieldsExists);
       }
     }
   }
   override writeKeyCb<T>(
     context: F.Context,
     opt: { key?: KEY; value: T },
-  ): F.AsyncCbReceiver<void> {
+  ): T.PPromise<void> {
     if (this.canExeWrite()) {
-      return F.AsyncCbReceiver.error(new Error("Method not allowed"));
+      return T.PPromise.reject(new Error("Method not allowed"));
     }
     const start = Date.now();
     const key = this._getKey(opt.key);
@@ -155,14 +156,14 @@ export class MemoCacheClient extends CacheController {
     if (this.log) {
       context.logMsg(`${this.name}.write(${key})`, `${Date.now() - start} ms`);
     }
-    return F.AsyncCbReceiver.value<void>(undefined);
+    return T.PPromise.resolve<void>(undefined);
   }
   override writeHashFieldsCb<T extends Record<string, unknown>>(
     context: F.Context,
     opt: { key?: KEY; value: T },
-  ): F.AsyncCbReceiver<void> {
+  ): T.PPromise<void> {
     if (this.canExeWrite()) {
-      return F.AsyncCbReceiver.error(new Error("Method not allowed"));
+      return T.PPromise.reject(new Error("Method not allowed"));
     }
     const start = Date.now();
     const key = this._getKey(opt.key);
@@ -177,15 +178,15 @@ export class MemoCacheClient extends CacheController {
     if (this.log) {
       context.logMsg(`${this.name}.write(${key}, [${Object.keys(opt.value)}])`, `${Date.now() - start} ms`);
     }
-    return F.AsyncCbReceiver.value<void>(undefined);
+    return T.PPromise.resolve<void>(undefined);
   }
 
   override removeKeyCb(
     context: F.Context,
     opt: { key?: KEY },
-  ): F.AsyncCbReceiver<void> {
+  ): T.PPromise<void> {
     if (this.canExeRemove()) {
-      return F.AsyncCbReceiver.error(new Error("Method not allowed"));
+      return T.PPromise.reject(new Error("Method not allowed"));
     }
     const start = Date.now();
     const key = this._getKey(opt.key);
@@ -195,14 +196,14 @@ export class MemoCacheClient extends CacheController {
     if (this.log) {
       context.logMsg(`${this.name}.remove(${key})`, `${Date.now() - start} ms`);
     }
-    return F.AsyncCbReceiver.value<void>(undefined);
+    return T.PPromise.resolve<void>(undefined);
   }
   override removeHashFieldsCb(
     context: F.Context,
     opt: { key?: KEY; fields: KEY[] | AllFields },
-  ): F.AsyncCbReceiver<void> {
+  ): T.PPromise<void> {
     if (this.canExeExists()) {
-      return F.AsyncCbReceiver.error(new Error("Method not allowed"));
+      return T.PPromise.reject(new Error("Method not allowed"));
     }
     const start = Date.now();
     const key = this._getKey(opt.key);
@@ -211,9 +212,9 @@ export class MemoCacheClient extends CacheController {
       context.logMsg(`${this.name}.remove(${key}, [${opt.fields}])`, `${Date.now() - start} ms`);
     }
     if (!hashValue) {
-      return F.AsyncCbReceiver.value<void>(undefined);
+      return T.PPromise.resolve<void>(undefined);
     } else if (hashValue instanceof Hash === false) {
-      return F.AsyncCbReceiver.error(new Error("Invalid hash value"));
+      return T.PPromise.reject(new Error("Invalid hash value"));
     } else {
       if (opt.fields === "*") {
         clearTimeout(hashValue.timeout);
@@ -227,20 +228,20 @@ export class MemoCacheClient extends CacheController {
           this.memo.delete(key);
         }
       }
-      return F.AsyncCbReceiver.value<void>(undefined);
+      return T.PPromise.resolve<void>(undefined);
     }
   }
   override incrementKeyCb(
     _c: F.Context,
     _i: { key?: KEY; incrBy: number; maxLimit: number },
-  ): F.AsyncCbReceiver<{ allowed: boolean; value: number }> {
-    return F.AsyncCbReceiver.error(new Error("Unimplemented!"));
+  ): T.PPromise<{ allowed: boolean; value: number }> {
+    return T.PPromise.reject(new Error("Unimplemented!"));
   }
   override incrementHashFieldCb(
     _c: F.Context,
     _i: { key?: KEY; field: KEY; incrBy: number; maxLimit: number },
-  ): F.AsyncCbReceiver<{ allowed: boolean; value: number }> {
-    return F.AsyncCbReceiver.error(new Error("Unimplemented!"));
+  ): T.PPromise<{ allowed: boolean; value: number }> {
+    return T.PPromise.reject(new Error("Unimplemented!"));
   }
   override dispose(): void {
     for (const value of this.memo.values()) {

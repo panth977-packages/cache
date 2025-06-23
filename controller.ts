@@ -1,4 +1,5 @@
 import type { F } from "@panth977/functions";
+import type { T } from "@panth977/tools";
 export type KEY = string | number;
 export type AllFields = "*";
 /**
@@ -38,43 +39,43 @@ export type AllFields = "*";
   abstract existsKeyCb(
     context: F.Context,
     opt: { key?: KEY },
-  ): F.AsyncCbReceiver<boolean>;
+  ): T.PPromise<boolean>;
   abstract existsHashFieldsCb(
     context: F.Context,
     opt: { key?: KEY; fields: Array<KEY> | AllFields },
-  ): F.AsyncCbReceiver<Record<string, boolean>>;
+  ): T.PPromise<Record<string, boolean>>;
   abstract readKeyCb<T>(
     context: F.Context,
     opt: { key?: KEY },
-  ): F.AsyncCbReceiver<T | undefined>;
+  ): T.PPromise<T | undefined>;
   abstract readHashFieldsCb<T extends Record<string, unknown>>(
     context: F.Context,
     opt: { key?: KEY; fields: KEY[] | AllFields },
-  ): F.AsyncCbReceiver<Partial<T>>;
+  ): T.PPromise<Partial<T>>;
   abstract writeKeyCb<T>(
     context: F.Context,
     opt: { key?: KEY; value: T },
-  ): F.AsyncCbReceiver<void>;
+  ): T.PPromise<void>;
   abstract writeHashFieldsCb<T extends Record<string, unknown>>(
     context: F.Context,
     opt: { key?: KEY; value: T },
-  ): F.AsyncCbReceiver<void>;
+  ): T.PPromise<void>;
   abstract removeKeyCb(
     context: F.Context,
     opt: { key?: KEY },
-  ): F.AsyncCbReceiver<void>;
+  ): T.PPromise<void>;
   abstract removeHashFieldsCb(
     context: F.Context,
     opt: { key?: KEY; fields: KEY[] | AllFields },
-  ): F.AsyncCbReceiver<void>;
+  ): T.PPromise<void>;
   abstract incrementKeyCb(
     context: F.Context,
     opt: { key?: KEY; incrBy: number; maxLimit: number },
-  ): F.AsyncCbReceiver<{ allowed: boolean; value: number }>;
+  ): T.PPromise<{ allowed: boolean; value: number }>;
   abstract incrementHashFieldCb(
     context: F.Context,
     opt: { key?: KEY; field: KEY; incrBy: number; maxLimit: number },
-  ): F.AsyncCbReceiver<{ allowed: boolean; value: number }>;
+  ): T.PPromise<{ allowed: boolean; value: number }>;
   abstract dispose(): void;
   /********************* Builds *********************/
   protected abstract clone(): this;

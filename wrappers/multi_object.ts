@@ -1,4 +1,4 @@
-import { F } from "@panth977/functions";
+import type { F } from "@panth977/functions";
 import { type AllowedTypes, VoidFn, WFGenericCache } from "./_helper.ts";
 import type z from "zod/v4";
 import type { CacheController } from "../exports.ts";
@@ -71,14 +71,14 @@ export class WFMultiObjectCache<
     const [controller, ids] = this.getController(input);
     return [controller, input, ids];
   }
-  protected override _getData(context: F.Context, cache: Cache<I, O>): F.AsyncCbReceiver<void> {
+  protected override _getData(context: F.Context, cache: Cache<I, O>): T.PPromise<void> {
     if (cache[iIds].length === 0) {
       cache[iOutput] = this.outputFactory();
-      return F.AsyncCbReceiver.value<void>(undefined);
+      return T.PPromise.resolve<void>(undefined);
     }
-    return F.AsyncCbReceiver
+    return T.PPromise
       .all(cache[iIds].map((id) => cache[iController].readKeyCb<Value<O>>(context, { key: id })))
-      .pipeThen((vals) => {
+      .map((vals) => {
         let data = this.outputFactory();
         const notFoundIds = [];
         for (let i = 0; i < cache[iIds].length; i++) {
@@ -100,25 +100,25 @@ export class WFMultiObjectCache<
   protected override _updatedInput(_context: F.Context, cache: Cache<I, O>): z.core.output<I> {
     return cache[iInput];
   }
-  protected override _setData(context: F.Context, cache: Cache<I, O>, output: z.core.output<O>): F.AsyncCbReceiver<void> {
+  protected override _setData(context: F.Context, cache: Cache<I, O>, output: z.core.output<O>): T.PPromise<void> {
     cache[iOutput] ??= this.outputFactory();
     const updates = [];
     for (const [id, val] of output) {
       cache[iOutput].set(id, val);
       updates.push(cache[iController].writeKeyCb(context, { key: id, value: val }));
     }
-    return F.AsyncCbReceiver.all(updates).pipeThen(VoidFn);
+    return T.PPromise.all(updates).map(VoidFn);
   }
   protected override _convertCache(cache: Cache<I, O>): z.core.output<O> {
     if (cache[iOutput] === undefined) throw new Error("Need to gothrough the [_getData] api");
     return cache[iOutput];
   }
-  protected override _delCache(context: F.Context, cache: Cache<I, O>): F.AsyncCbReceiver<void> {
+  protected override _delCache(context: F.Context, cache: Cache<I, O>): T.PPromise<void> {
     const [controller, ids] = this.getController(cache[iInput]);
     const updates = [];
     for (const id of ids) {
       updates.push(controller.removeKeyCb(context, { key: id }));
     }
-    return F.AsyncCbReceiver.all(updates).pipeThen(VoidFn);
+    return T.PPromise.all(updates).map(VoidFn);
   }
 }

@@ -1,4 +1,5 @@
 import { F } from "@panth977/functions";
+import { T } from "@panth977/tools";
 import type { z } from "zod/v4";
 
 export type AllowedTypes = Extract<F.FuncTypes, "AsyncFunc" | "AsyncCb">;
@@ -21,23 +22,23 @@ export abstract class WFGenericCache<C, I extends F.FuncInput, O extends F.FuncO
     delete this.Hook;
   }
   protected override SyncFunc: undefined;
-  protected override SubsCb: undefined;
+  protected override StreamFunc: undefined;
   protected abstract _getCacheController(context: F.Context, input: z.infer<I>): C;
-  protected abstract _getData(context: F.Context, cache: C): F.AsyncCbReceiver<void>;
+  protected abstract _getData(context: F.Context, cache: C): T.PPromise<void>;
   protected abstract _shouldInvoke(cache: C): boolean;
   protected abstract _updatedInput(context: F.Context, cache: C): z.infer<I>;
-  protected abstract _setData(context: F.Context, cache: C, output: z.infer<O>): F.AsyncCbReceiver<void>;
-  protected abstract _delCache(context: F.Context, cache: C): F.AsyncCbReceiver<void>;
+  protected abstract _setData(context: F.Context, cache: C, output: z.infer<O>): T.PPromise<void>;
+  protected abstract _delCache(context: F.Context, cache: C): T.PPromise<void>;
   protected abstract _convertCache(cache: C): z.core.output<O>;
-  get(context: F.Context, input: z.core.output<I>): F.AsyncCbReceiver<z.core.output<O>> {
+  get(context: F.Context, input: z.core.output<I>): T.PPromise<z.core.output<O>> {
     const cache = this._getCacheController(context, input);
-    return this._getData(context, cache).pipeThen(this._convertCache.bind(this, cache));
+    return this._getData(context, cache).map(this._convertCache.bind(this, cache));
   }
-  set(context: F.Context, input: z.core.output<I>, output: z.core.output<O>): F.AsyncCbReceiver<void> {
+  set(context: F.Context, input: z.core.output<I>, output: z.core.output<O>): T.PPromise<void> {
     const cache = this._getCacheController(context, input);
     return this._setData(context, cache, output);
   }
-  del(context: F.Context, input: z.core.output<I>): F.AsyncCbReceiver<void> {
+  del(context: F.Context, input: z.core.output<I>): T.PPromise<void> {
     const cache = this._getCacheController(context, input);
     return this._delCache(context, cache);
   }
@@ -45,34 +46,18 @@ export abstract class WFGenericCache<C, I extends F.FuncInput, O extends F.FuncO
     invokeStack: F.FuncInvokeStack<I, O, D, "AsyncFunc">,
     context: F.Context<F.Func<I, O, D, "AsyncFunc">>,
     input: z.core.output<I>,
-  ): Promise<z.core.output<O>> {
+  ): T.PPromise<z.core.output<O>> {
     const cache = this._getCacheController(context, input);
-    return this._getData(context, cache).pipeCatch(VoidFn).pipe(() => {
+    return this._getData(context, cache).map(() => {
       if (!this._shouldInvoke(cache)) {
-        return F.AsyncCbReceiver.value(this._convertCache(cache));
+        return T.PPromise.resolve(this._convertCache(cache));
       }
       input = this._updatedInput(context, cache);
-      return F.AsyncCbReceiver.fromPromise(invokeStack.$(context, input)).pipeThen((output) => {
-        this._setData(context, cache, output).pipeCatch(VoidFn);
-        return this._convertCache(cache);
-      });
-    }).promisified();
-  }
-  protected override AsyncCb(
-    invokeStack: F.FuncInvokeStack<I, O, D, "AsyncCb">,
-    context: F.Context<F.Func<I, O, D, "AsyncCb">>,
-    input: z.core.output<I>,
-  ): F.AsyncCbReceiver<z.core.output<O>> {
-    const cache = this._getCacheController(context, input);
-    return this._getData(context, cache).pipe(() => {
-      if (!this._shouldInvoke(cache)) {
-        return F.AsyncCbReceiver.value(this._convertCache(cache));
-      }
-      input = this._updatedInput(context, cache);
-      return invokeStack.$(context, input).pipeThen((output) => {
+      const result = invokeStack.$(context, input).then((output) => {
         this._setData(context, cache, output);
         return this._convertCache(cache);
       });
+      return result;
     });
   }
 }

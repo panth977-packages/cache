@@ -1,4 +1,4 @@
-import { F } from "@panth977/functions";
+import type { F } from "@panth977/functions";
 import { type AllowedTypes, WFGenericCache } from "./_helper.ts";
 import type z from "zod/v4";
 import type { CacheController } from "../exports.ts";
@@ -74,9 +74,9 @@ export class WFCollectionCache<
     const [controller, ids] = this.getController(input);
     return [controller, input, ids];
   }
-  protected override _getData(context: F.Context, cache: Cache<I, O>): F.AsyncCbReceiver<void> {
+  protected override _getData(context: F.Context, cache: Cache<I, O>): T.PPromise<void> {
     if (cache[iIds] === "*") {
-      return cache[iController].readHashFieldsCb<ReturnType<z.infer<O>["toRecord"]>>(context, { fields: "*" }).pipeThen(({ $, ...result }) => {
+      return cache[iController].readHashFieldsCb<ReturnType<z.infer<O>["toRecord"]>>(context, { fields: "*" }).map(({ $, ...result }) => {
         let value = this.outputFactory();
         for (const key in result) {
           value.add(key, result[key]);
@@ -92,9 +92,9 @@ export class WFCollectionCache<
       });
     } else {
       if (cache[iIds].includes("$")) {
-        return F.AsyncCbReceiver.error(new Error("Cannot use $ in ids, it is a reserved keyword"));
+        return T.PPromise.reject(new Error("Cannot use $ in ids, it is a reserved keyword"));
       }
-      return cache[iController].readHashFieldsCb<ReturnType<z.infer<O>["toRecord"]>>(context, { fields: cache[iIds] }).pipeThen((result) => {
+      return cache[iController].readHashFieldsCb<ReturnType<z.infer<O>["toRecord"]>>(context, { fields: cache[iIds] }).map((result) => {
         let value = this.outputFactory();
         const notFound = [];
         for (const key of cache[iIds]) {
@@ -122,7 +122,7 @@ export class WFCollectionCache<
   protected override _updatedInput(_context: F.Context, cache: Cache<I, O>): z.core.output<I> {
     return cache[iInput];
   }
-  protected override _setData(context: F.Context, cache: Cache<I, O>, output: z.core.output<O>): F.AsyncCbReceiver<void> {
+  protected override _setData(context: F.Context, cache: Cache<I, O>, output: z.core.output<O>): T.PPromise<void> {
     cache[iOutput] ??= this.outputFactory();
     for (const [key, value] of output) {
       cache[iOutput].set(key, value);
@@ -133,7 +133,7 @@ export class WFCollectionCache<
     if (cache[iOutput] === undefined) throw new Error("Need to gothrough the [_getData] api");
     return cache[iOutput];
   }
-  protected override _delCache(context: F.Context, cache: Cache<I, O>): F.AsyncCbReceiver<void> {
+  protected override _delCache(context: F.Context, cache: Cache<I, O>): T.PPromise<void> {
     if (cache[iIds] === "*") {
       return cache[iController].removeHashFieldsCb(context, { fields: "*" });
     } else {
