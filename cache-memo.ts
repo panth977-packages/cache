@@ -35,18 +35,21 @@ class Hash<T extends Record<string, any> = Record<string, any>> {
  */
 export class MemoCacheClient extends CacheController {
   readonly memo: Map<KEY, Obj | Hash>;
-  constructor(opt: {
-    name: string;
-    separator: string;
-    expiry: number;
-    prefix: string;
-    log: boolean;
-    mode: "read-write" | "readonly" | "writeonly";
-  }, memo?: Map<KEY, Obj | Hash>) {
+  constructor(
+    opt: {
+      name: string;
+      separator: string;
+      expiry: number;
+      prefix: string;
+      log: boolean;
+      mode: "read-write" | "readonly" | "writeonly";
+    },
+    memo?: Map<KEY, Obj | Hash>,
+  ) {
     super(opt);
     this.memo = memo ?? new Map();
   }
-  override existsKeyCb(
+  override existsKey(
     context: F.Context,
     opt: { key?: KEY },
   ): T.PPromise<boolean> {
@@ -60,7 +63,7 @@ export class MemoCacheClient extends CacheController {
     }
     return T.PPromise.resolve(exists);
   }
-  override existsHashFieldsCb(
+  override existsHashFields(
     context: F.Context,
     opt: { key?: KEY; fields: Array<KEY> | AllFields },
   ): T.PPromise<Record<string, boolean>> {
@@ -90,7 +93,7 @@ export class MemoCacheClient extends CacheController {
       return T.PPromise.resolve(fieldsExists);
     }
   }
-  override readKeyCb<T>(
+  override readKey<T>(
     context: F.Context,
     opt: { key?: KEY },
   ): T.PPromise<T | undefined> {
@@ -111,7 +114,7 @@ export class MemoCacheClient extends CacheController {
       return T.PPromise.resolve<T | undefined>(value.val);
     }
   }
-  override readHashFieldsCb<T extends Record<string, unknown>>(
+  override readHashFields<T extends Record<string, unknown>>(
     context: F.Context,
     opt: { key?: KEY; fields: KEY[] | AllFields },
   ): T.PPromise<Partial<T>> {
@@ -122,7 +125,10 @@ export class MemoCacheClient extends CacheController {
     const key = this._getKey(opt.key);
     const hashValue = this.memo.get(key) as Hash<T>;
     if (this.log) {
-      context.logMsg(`${this.name}.read(${key}, [${opt.fields}])`, `${Date.now() - start} ms`);
+      context.logMsg(
+        `${this.name}.read(${key}, [${opt.fields}])`,
+        `${Date.now() - start} ms`,
+      );
     }
     if (!hashValue) {
       return T.PPromise.resolve({});
@@ -140,7 +146,7 @@ export class MemoCacheClient extends CacheController {
       }
     }
   }
-  override writeKeyCb<T>(
+  override writeKey<T>(
     context: F.Context,
     opt: { key?: KEY; value: T },
   ): T.PPromise<void> {
@@ -151,14 +157,17 @@ export class MemoCacheClient extends CacheController {
     const key = this._getKey(opt.key);
     const value = this.memo.get(key);
     if (value) clearTimeout(value.timeout);
-    const timeout = setTimeout(this.memo.delete.bind(this.memo, key), this.expiry);
+    const timeout = setTimeout(
+      this.memo.delete.bind(this.memo, key),
+      this.expiry,
+    );
     this.memo.set(key, new Obj(opt.value, timeout));
     if (this.log) {
       context.logMsg(`${this.name}.write(${key})`, `${Date.now() - start} ms`);
     }
     return T.PPromise.resolve<void>(undefined);
   }
-  override writeHashFieldsCb<T extends Record<string, unknown>>(
+  override writeHashFields<T extends Record<string, unknown>>(
     context: F.Context,
     opt: { key?: KEY; value: T },
   ): T.PPromise<void> {
@@ -172,19 +181,22 @@ export class MemoCacheClient extends CacheController {
       Object.assign(value.val, opt.value);
     } else {
       if (value) clearTimeout(value.timeout);
-      const timeout = setTimeout(this.memo.delete.bind(this.memo, key), this.expiry);
+      const timeout = setTimeout(
+        this.memo.delete.bind(this.memo, key),
+        this.expiry,
+      );
       this.memo.set(key, new Hash({ ...opt.value }, timeout));
     }
     if (this.log) {
-      context.logMsg(`${this.name}.write(${key}, [${Object.keys(opt.value)}])`, `${Date.now() - start} ms`);
+      context.logMsg(
+        `${this.name}.write(${key}, [${Object.keys(opt.value)}])`,
+        `${Date.now() - start} ms`,
+      );
     }
     return T.PPromise.resolve<void>(undefined);
   }
 
-  override removeKeyCb(
-    context: F.Context,
-    opt: { key?: KEY },
-  ): T.PPromise<void> {
+  override removeKey(context: F.Context, opt: { key?: KEY }): T.PPromise<void> {
     if (this.canExeRemove()) {
       return T.PPromise.reject(new Error("Method not allowed"));
     }
@@ -198,7 +210,7 @@ export class MemoCacheClient extends CacheController {
     }
     return T.PPromise.resolve<void>(undefined);
   }
-  override removeHashFieldsCb(
+  override removeHashFields(
     context: F.Context,
     opt: { key?: KEY; fields: KEY[] | AllFields },
   ): T.PPromise<void> {
@@ -209,7 +221,10 @@ export class MemoCacheClient extends CacheController {
     const key = this._getKey(opt.key);
     const hashValue = this.memo.get(key);
     if (this.log) {
-      context.logMsg(`${this.name}.remove(${key}, [${opt.fields}])`, `${Date.now() - start} ms`);
+      context.logMsg(
+        `${this.name}.remove(${key}, [${opt.fields}])`,
+        `${Date.now() - start} ms`,
+      );
     }
     if (!hashValue) {
       return T.PPromise.resolve<void>(undefined);
@@ -231,13 +246,13 @@ export class MemoCacheClient extends CacheController {
       return T.PPromise.resolve<void>(undefined);
     }
   }
-  override incrementKeyCb(
+  override incrementKey(
     _c: F.Context,
     _i: { key?: KEY; incrBy: number; maxLimit: number },
   ): T.PPromise<{ allowed: boolean; value: number }> {
     return T.PPromise.reject(new Error("Unimplemented!"));
   }
-  override incrementHashFieldCb(
+  override incrementHashField(
     _c: F.Context,
     _i: { key?: KEY; field: KEY; incrBy: number; maxLimit: number },
   ): T.PPromise<{ allowed: boolean; value: number }> {
@@ -250,13 +265,16 @@ export class MemoCacheClient extends CacheController {
     this.memo.clear();
   }
   protected override clone(): this {
-    return new MemoCacheClient({
-      expiry: this.expiry,
-      log: this.log,
-      mode: this.mode,
-      name: this.name,
-      prefix: this.prefix,
-      separator: this.separator,
-    }, this.memo) as this;
+    return new MemoCacheClient(
+      {
+        expiry: this.expiry,
+        log: this.log,
+        mode: this.mode,
+        name: this.name,
+        prefix: this.prefix,
+        separator: this.separator,
+      },
+      this.memo,
+    ) as this;
   }
 }

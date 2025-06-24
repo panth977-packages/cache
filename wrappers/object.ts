@@ -4,7 +4,11 @@ import type z from "zod/v4";
 import type { CacheController } from "../exports.ts";
 import type { T } from "@panth977/tools";
 
-type Cache<I extends z.ZodType, O extends z.ZodType> = [CacheController, z.infer<I>, ...([z.infer<O>] | [])];
+type Cache<I extends z.ZodType, O extends z.ZodType> = [
+  CacheController,
+  z.infer<I>,
+  ...([z.infer<O>] | []),
+];
 const iController = 0;
 const iInput = 1;
 const iOutput = 2;
@@ -35,22 +39,35 @@ const iOutput = 2;
  *   });
  * ```
  */
-export class WFObjectCache<I extends F.FuncInput, O extends F.FuncOutput, D extends F.FuncDeclaration, Type extends AllowedTypes>
-  extends WFGenericCache<Cache<I, O>, I, O, D, Type> {
+export class WFObjectCache<
+  I extends F.FuncInput,
+  O extends F.FuncOutput,
+  D extends F.FuncDeclaration,
+  Type extends AllowedTypes,
+> extends WFGenericCache<Cache<I, O>, I, O, D, Type> {
   protected readonly getController: (input: z.infer<I>) => [CacheController];
-  constructor({ getController, onInit }: {
+  constructor({
+    getController,
+    onInit,
+  }: {
     onInit?: (hook: WFObjectCache<I, O, D, Type>) => void;
     getController: (input: z.infer<I>) => [CacheController];
   }) {
     super({ onInit } as any);
     this.getController = getController;
   }
-  protected override _getCacheController(_context: F.Context, input: z.core.output<I>): Cache<I, O> {
+  protected override _getCacheController(
+    _context: F.Context,
+    input: z.core.output<I>,
+  ): Cache<I, O> {
     const [controller] = this.getController(input);
     return [controller, input];
   }
-  protected override _getData(context: F.Context, cache: Cache<I, O>): T.PPromise<void> {
-    return cache[iController].readKeyCb<z.infer<O>>(context, {}).map((data) => {
+  protected override _getData(
+    context: F.Context,
+    cache: Cache<I, O>,
+  ): T.PPromise<void> {
+    return cache[iController].readKey<z.infer<O>>(context, {}).map((data) => {
       if (data === undefined) return;
       const value = this.func.output.parse(data);
       cache[iOutput] = value;
@@ -60,18 +77,29 @@ export class WFObjectCache<I extends F.FuncInput, O extends F.FuncOutput, D exte
     if (cache.length) return true;
     return false;
   }
-  protected override _updatedInput(_context: F.Context, cache: Cache<I, O>): z.core.output<I> {
+  protected override _updatedInput(
+    _context: F.Context,
+    cache: Cache<I, O>,
+  ): z.core.output<I> {
     return cache[iInput];
   }
-  protected override _setData(context: F.Context, cache: Cache<I, O>, output: z.core.output<O>): T.PPromise<void> {
+  protected override _setData(
+    context: F.Context,
+    cache: Cache<I, O>,
+    output: z.core.output<O>,
+  ): T.PPromise<void> {
     cache[iOutput] = output;
-    return cache[iController].writeKeyCb<z.infer<O>>(context, { value: output });
+    return cache[iController].writeKey<z.infer<O>>(context, { value: output });
   }
   protected override _convertCache(cache: Cache<I, O>): z.core.output<O> {
-    if (cache[iOutput] === undefined) throw new Error("Need to gothrough the [_getData] api");
+    if (cache[iOutput] === undefined)
+      throw new Error("Need to gothrough the [_getData] api");
     return cache[iOutput];
   }
-  protected override _delCache(context: F.Context, cache: Cache<I, O>): T.PPromise<void> {
-    return cache[iController].removeKeyCb(context, {});
+  protected override _delCache(
+    context: F.Context,
+    cache: Cache<I, O>,
+  ): T.PPromise<void> {
+    return cache[iController].removeKey(context, {});
   }
 }

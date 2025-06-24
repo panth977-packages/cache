@@ -36,43 +36,40 @@ export type AllFields = "*";
     return `${this.prefix}${this.separator}${key}`;
   }
   /********************* Controllers *********************/
-  abstract existsKeyCb(
+  abstract existsKey(
     context: F.Context,
     opt: { key?: KEY },
   ): T.PPromise<boolean>;
-  abstract existsHashFieldsCb(
+  abstract existsHashFields(
     context: F.Context,
     opt: { key?: KEY; fields: Array<KEY> | AllFields },
   ): T.PPromise<Record<string, boolean>>;
-  abstract readKeyCb<T>(
+  abstract readKey<T>(
     context: F.Context,
     opt: { key?: KEY },
   ): T.PPromise<T | undefined>;
-  abstract readHashFieldsCb<T extends Record<string, unknown>>(
+  abstract readHashFields<T extends Record<string, unknown>>(
     context: F.Context,
     opt: { key?: KEY; fields: KEY[] | AllFields },
   ): T.PPromise<Partial<T>>;
-  abstract writeKeyCb<T>(
+  abstract writeKey<T>(
     context: F.Context,
     opt: { key?: KEY; value: T },
   ): T.PPromise<void>;
-  abstract writeHashFieldsCb<T extends Record<string, unknown>>(
+  abstract writeHashFields<T extends Record<string, unknown>>(
     context: F.Context,
     opt: { key?: KEY; value: T },
   ): T.PPromise<void>;
-  abstract removeKeyCb(
-    context: F.Context,
-    opt: { key?: KEY },
-  ): T.PPromise<void>;
-  abstract removeHashFieldsCb(
+  abstract removeKey(context: F.Context, opt: { key?: KEY }): T.PPromise<void>;
+  abstract removeHashFields(
     context: F.Context,
     opt: { key?: KEY; fields: KEY[] | AllFields },
   ): T.PPromise<void>;
-  abstract incrementKeyCb(
+  abstract incrementKey(
     context: F.Context,
     opt: { key?: KEY; incrBy: number; maxLimit: number },
   ): T.PPromise<{ allowed: boolean; value: number }>;
-  abstract incrementHashFieldCb(
+  abstract incrementHashField(
     context: F.Context,
     opt: { key?: KEY; field: KEY; incrBy: number; maxLimit: number },
   ): T.PPromise<{ allowed: boolean; value: number }>;
