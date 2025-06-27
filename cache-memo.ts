@@ -42,7 +42,7 @@ export class MemoCacheClient extends CacheController {
       expiry: number;
       prefix: string;
       log: boolean;
-      mode: "read-write" | "readonly" | "writeonly";
+      mode: "read-write" | "readonly" | "writeonly" | "ignore";
     },
     memo?: Map<KEY, Obj | Hash>,
   ) {
