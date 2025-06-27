@@ -2,14 +2,16 @@ import type { F } from "@panth977/functions";
 import type { T } from "@panth977/tools";
 export type KEY = string | number;
 export type AllFields = "*";
+
 /**
  * wrappers for {@link AbstractCacheClient} to streamline the
- */ export abstract class CacheController {
+ */
+export abstract class CacheController {
   protected name: string;
   protected separator: string;
   protected prefix: string = "";
   protected expiry: number;
-  protected mode: "read-write" | "readonly" | "writeonly";
+  protected mode: "read-write" | "readonly" | "writeonly" | "ignore";
   protected log: boolean;
   constructor({
     name,
@@ -23,7 +25,7 @@ export type AllFields = "*";
     expiry: number;
     prefix: string;
     log: boolean;
-    mode: "read-write" | "readonly" | "writeonly";
+    mode: "read-write" | "readonly" | "writeonly" | "ignore";
   }) {
     this.name = name;
     this.separator = separator;
@@ -77,7 +79,7 @@ export type AllFields = "*";
   /********************* Builds *********************/
   protected abstract clone(): this;
   set(opt: {
-    mode?: "read-write" | "readonly" | "writeonly";
+    mode?: "read-write" | "readonly" | "writeonly" | "ignore";
     expiry?: number;
     log?: boolean;
   }): this {
