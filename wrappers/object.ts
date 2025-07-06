@@ -42,15 +42,14 @@ const iOutput = 2;
 export class WFObjectCache<
   I extends F.FuncInput,
   O extends F.FuncOutput,
-  D extends F.FuncDeclaration,
   Type extends AllowedTypes,
-> extends WFGenericCache<Cache<I, O>, I, O, D, Type> {
+> extends WFGenericCache<Cache<I, O>, I, O, Type> {
   protected readonly getController: (input: z.infer<I>) => [CacheController];
   constructor({
     getController,
     onInit,
   }: {
-    onInit?: (hook: WFObjectCache<I, O, D, Type>) => void;
+    onInit?: (hook: WFObjectCache<I, O, Type>) => void;
     getController: (input: z.infer<I>) => [CacheController];
   }) {
     super({ onInit } as any);
@@ -92,8 +91,9 @@ export class WFObjectCache<
     return cache[iController].writeKey<z.infer<O>>(context, { value: output });
   }
   protected override _convertCache(cache: Cache<I, O>): z.core.output<O> {
-    if (cache[iOutput] === undefined)
+    if (cache[iOutput] === undefined) {
       throw new Error("Need to gothrough the [_getData] api");
+    }
     return cache[iOutput];
   }
   protected override _delCache(

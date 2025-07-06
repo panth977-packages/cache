@@ -56,9 +56,8 @@ type Idx<O extends Output> = ReturnType<z.infer<O>["getIndexs"]>[number];
 export class WFCollectionCache<
   I extends F.FuncInput,
   O extends Output,
-  D extends F.FuncDeclaration,
   Type extends AllowedTypes,
-> extends WFGenericCache<Cache<I, O>, I, O, D, Type> {
+> extends WFGenericCache<Cache<I, O>, I, O, Type> {
   protected readonly getController: (
     input: z.infer<I>,
   ) => [CacheController, Idx<O>[] | "*"];
@@ -72,7 +71,7 @@ export class WFCollectionCache<
     updateInput,
     onInit,
   }: {
-    onInit?: (hook: WFCollectionCache<I, O, D, Type>) => void;
+    onInit?: (hook: WFCollectionCache<I, O, Type>) => void;
     getController: (input: z.infer<I>) => [CacheController, Idx<O>[] | "*"];
     updateInput: (
       input: z.infer<I>,
@@ -180,8 +179,9 @@ export class WFCollectionCache<
     });
   }
   protected override _convertCache(cache: Cache<I, O>): z.core.output<O> {
-    if (cache[iOutput] === undefined)
+    if (cache[iOutput] === undefined) {
       throw new Error("Need to gothrough the [_getData] api");
+    }
     return cache[iOutput];
   }
   protected override _delCache(

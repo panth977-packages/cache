@@ -51,9 +51,8 @@ type Value<O extends Output> = ReturnType<z.infer<O>["get"]>;
 export class WFMultiObjectCache<
   I extends F.FuncInput,
   O extends Output,
-  D extends F.FuncDeclaration,
   Type extends AllowedTypes,
-> extends WFGenericCache<Cache<I, O>, I, O, D, Type> {
+> extends WFGenericCache<Cache<I, O>, I, O, Type> {
   protected readonly getController: (
     input: z.infer<I>,
   ) => [CacheController, Idx<O>[]];
@@ -66,7 +65,7 @@ export class WFMultiObjectCache<
     updateInput,
     onInit,
   }: {
-    onInit?: (hook: WFMultiObjectCache<I, O, D, Type>) => void;
+    onInit?: (hook: WFMultiObjectCache<I, O, Type>) => void;
     getController: (input: z.infer<I>) => [CacheController, Idx<O>[]];
     updateInput: (input: z.infer<I>, notFoundIds: Idx<O>[]) => z.infer<I>;
   }) {
@@ -93,9 +92,7 @@ export class WFMultiObjectCache<
       return T.PPromise.resolve<void>(undefined);
     }
     return T.PPromise.all(
-      cache[iIds].map((id) =>
-        cache[iController].readKey<Value<O>>(context, { key: id }),
-      ),
+      cache[iIds].map((id) => cache[iController].readKey<Value<O>>(context, { key: id })),
     ).map((vals) => {
       let data = this.outputFactory();
       const notFoundIds = [];
@@ -137,8 +134,9 @@ export class WFMultiObjectCache<
     return T.PPromise.all(updates).map(VoidFn);
   }
   protected override _convertCache(cache: Cache<I, O>): z.core.output<O> {
-    if (cache[iOutput] === undefined)
+    if (cache[iOutput] === undefined) {
       throw new Error("Need to gothrough the [_getData] api");
+    }
     return cache[iOutput];
   }
   protected override _delCache(

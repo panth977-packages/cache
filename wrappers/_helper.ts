@@ -3,19 +3,19 @@ import { T } from "@panth977/tools";
 import type { z } from "zod/v4";
 
 export type AllowedTypes = Extract<F.FuncTypes, "AsyncFunc" | "AsyncCb">;
-export abstract class WFGenericCache<C, I extends F.FuncInput, O extends F.FuncOutput, D extends F.FuncDeclaration, Type extends AllowedTypes>
-  extends F.GenericFuncWrapper<I, O, D, Type> {
+export abstract class WFGenericCache<C, I extends F.FuncInput, O extends F.FuncOutput, Type extends AllowedTypes>
+  extends F.GenericFuncWrapper<I, O, Type> {
   private Hook?: (hook: this) => void;
-  private _func?: F.Func<I, O, D, Type>;
-  constructor({ onInit }: { onInit?: (hook: WFGenericCache<C, I, O, D, Type>) => void }) {
+  private _func?: F.Func<I, O, Type>;
+  constructor({ onInit }: { onInit?: (hook: WFGenericCache<C, I, O, Type>) => void }) {
     super();
     this.Hook = onInit;
   }
-  protected get func(): F.Func<I, O, D, Type> {
+  protected get func(): F.Func<I, O, Type> {
     if (!this._func) throw new Error("Function not initialized");
     return this._func;
   }
-  override optimize(func: F.Func<I, O, D, Type>): void {
+  override optimize(func: F.Func<I, O, Type>): void {
     this._func = func;
     super.optimize(func);
     this.Hook?.(this);
@@ -43,8 +43,8 @@ export abstract class WFGenericCache<C, I extends F.FuncInput, O extends F.FuncO
     return this._delCache(context, cache);
   }
   protected override AsyncFunc(
-    invokeStack: F.FuncInvokeStack<I, O, D, "AsyncFunc">,
-    context: F.Context<F.Func<I, O, D, "AsyncFunc">>,
+    invokeStack: F.FuncInvokeStack<I, O, "AsyncFunc">,
+    context: F.Context<F.Func<I, O, "AsyncFunc">>,
     input: z.core.output<I>,
   ): T.PPromise<z.core.output<O>> {
     const cache = this._getCacheController(context, input);
