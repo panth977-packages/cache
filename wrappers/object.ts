@@ -1,6 +1,6 @@
 import type { F } from "@panth977/functions";
 import { type AllowedTypes, WFGenericCache } from "./_helper.ts";
-import type z from "zod/v4";
+import type z from "zod";
 import type { CacheController } from "../exports.ts";
 import type { T } from "@panth977/tools";
 
@@ -57,7 +57,7 @@ export class WFObjectCache<
   }
   protected override _getCacheController(
     _context: F.Context,
-    input: z.core.output<I>,
+    input: z.infer<I>,
   ): Cache<I, O> {
     const [controller] = this.getController(input);
     return [controller, input];
@@ -79,18 +79,18 @@ export class WFObjectCache<
   protected override _updatedInput(
     _context: F.Context,
     cache: Cache<I, O>,
-  ): z.core.output<I> {
+  ): z.infer<I> {
     return cache[iInput];
   }
   protected override _setData(
     context: F.Context,
     cache: Cache<I, O>,
-    output: z.core.output<O>,
+    output: z.infer<O>,
   ): T.PPromise<void> {
     cache[iOutput] = output;
     return cache[iController].writeKey<z.infer<O>>(context, { value: output });
   }
-  protected override _convertCache(cache: Cache<I, O>): z.core.output<O> {
+  protected override _convertCache(cache: Cache<I, O>): z.infer<O> {
     if (cache[iOutput] === undefined) {
       throw new Error("Need to gothrough the [_getData] api");
     }

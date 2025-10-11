@@ -1,6 +1,6 @@
 import type { F } from "@panth977/functions";
 import { type AllowedTypes, VoidFn, WFGenericCache } from "./_helper.ts";
-import type z from "zod/v4";
+import type z from "zod";
 import type { CacheController } from "../exports.ts";
 import { T } from "@panth977/tools";
 
@@ -74,11 +74,11 @@ export class WFMultiObjectCache<
     this.updateInput = updateInput;
   }
   private outputFactory(): z.infer<O> {
-    return new T.PreIndexedStructure(0, [], []) as z.infer<O>;
+    return new T.PreIndexedStructure<any, any>(0, [], []) as z.infer<O>;
   }
   protected override _getCacheController(
     _context: F.Context,
-    input: z.core.output<I>,
+    input: z.infer<I>,
   ): Cache<I, O> {
     const [controller, ids] = this.getController(input);
     return [controller, input, ids];
@@ -92,7 +92,9 @@ export class WFMultiObjectCache<
       return T.PPromise.resolve<void>(undefined);
     }
     return T.PPromise.all(
-      cache[iIds].map((id) => cache[iController].readKey<Value<O>>(context, { key: id })),
+      cache[iIds].map((id) =>
+        cache[iController].readKey<Value<O>>(context, { key: id }),
+      ),
     ).map((vals) => {
       let data = this.outputFactory();
       const notFoundIds = [];
@@ -115,13 +117,13 @@ export class WFMultiObjectCache<
   protected override _updatedInput(
     _context: F.Context,
     cache: Cache<I, O>,
-  ): z.core.output<I> {
+  ): z.infer<I> {
     return cache[iInput];
   }
   protected override _setData(
     context: F.Context,
     cache: Cache<I, O>,
-    output: z.core.output<O>,
+    output: z.infer<O>,
   ): T.PPromise<void> {
     cache[iOutput] ??= this.outputFactory();
     const updates = [];
@@ -133,7 +135,7 @@ export class WFMultiObjectCache<
     }
     return T.PPromise.all(updates).map(VoidFn);
   }
-  protected override _convertCache(cache: Cache<I, O>): z.core.output<O> {
+  protected override _convertCache(cache: Cache<I, O>): z.infer<O> {
     if (cache[iOutput] === undefined) {
       throw new Error("Need to gothrough the [_getData] api");
     }
