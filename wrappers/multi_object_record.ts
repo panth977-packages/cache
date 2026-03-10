@@ -1,0 +1,125 @@
+import type { F } from "@panth977/functions";
+import { type AllowedTypes, VoidFn, WFGenericCache } from "./_helper.ts";
+import type z from "zod";
+import type { CacheController } from "../exports.ts";
+import { T } from "@panth977/tools";
+
+type Output = z.ZodRecord<any, any>;
+type Cache<I extends z.ZodType, O extends Output> = [
+  CacheController,
+  z.infer<I>,
+  Idx[],
+  ...([z.infer<O>] | []),
+];
+const iController = 0;
+const iInput = 1;
+const iIds = 2;
+const iOutput = 3;
+type Idx = string;
+type Value<O extends Output> = z.infer<O["valueSchema"]>;
+/**
+ * ```ts
+ * const cache = new MemoCacheClient({...});
+ * const UserChanges = new T.PubSub(z.tuple([z.instanceof(F.Context), z.number()]));
+ * const getUsers = F.asyncFunc()
+ *   .$input(
+ *     z.number().array(),
+ *   )
+ *   .$output(
+ *     z.record(
+ *       z.coerce.string(),
+ *       z.object({ id: z.number(), email: z.string(), name: z.string() }),
+ *     ),
+ *   )
+ *   .$wrap(
+ *     new WFMultiObjectCacheRecord({
+ *       getController: (userIds) => [cache.addPrefix("Users"), userIds],
+ *       updateInput: (_input, notFound) => notFound,
+ *       onInit: (hook) => {
+ *         UserChanges.subscribe(([context, userId]) => hook.del(context, [userId]))
+ *       }
+ *     }),
+ *   )
+ *   .$(async (context, userIds) => {
+ *     type User = { id: number; email: string; name: string };
+ *     const result = await pg.query<User>(`SELECT * FROM users WHERE id IN (${new Array(userIds.length).fill("?")})`, userIds);
+ *     const data = T.oneToOneMapping(result.rows, T.AccessKey("id"));
+ *     return data;
+ *   });
+ * ```
+ */
+export class WFMultiObjectCacheRecord<I extends F.FuncInput, O extends Output, Type extends AllowedTypes>
+  extends WFGenericCache<Cache<I, O>, I, O, Type> {
+  protected readonly getController: (input: z.infer<I>) => [CacheController, Idx[]];
+  protected readonly updateInput: (input: z.infer<I>, notFoundIds: Idx[]) => z.infer<I>;
+  constructor({ getController, updateInput, onInit }: {
+    onInit?: (hook: WFMultiObjectCacheRecord<I, O, Type>) => void;
+    getController: (input: z.infer<I>) => [CacheController, Idx[]];
+    updateInput: (input: z.infer<I>, notFoundIds: Idx[]) => z.infer<I>;
+  }) {
+    super({ onInit } as any);
+    this.getController = getController;
+    this.updateInput = updateInput;
+  }
+  private outputFactory(): Record<string, Value<O>> {
+    return {};
+  }
+  protected override _getCacheController(_context: F.Context, input: z.infer<I>): Cache<I, O> {
+    const [controller, ids] = this.getController(input);
+    return [controller, input, ids];
+  }
+  protected override _getData(context: F.Context, cache: Cache<I, O>): T.PPromise<void> {
+    if (cache[iIds].length === 0) {
+      cache[iOutput] = this.outputFactory();
+      return T.PPromise.resolve<void>(undefined);
+    }
+    return T.PPromise.all(
+      cache[iIds].map((id) => cache[iController].readKey<Value<O>>(context, { key: id })),
+    ).map((vals) => {
+      let data = this.outputFactory();
+      const notFoundIds = [];
+      for (let i = 0; i < cache[iIds].length; i++) {
+        if (vals[i] === undefined) {
+          notFoundIds.push(cache[iIds][i]);
+        } else {
+          data[cache[iIds][i]] = vals[i];
+        }
+      }
+      data = this.func.output.parse(data);
+      cache[iInput] = this.updateInput(cache[iInput], notFoundIds);
+    });
+  }
+  protected override _shouldInvoke(cache: Cache<I, O>): boolean {
+    if (cache[iOutput] === undefined) return true;
+    if (cache[iIds].length) return true;
+    return false;
+  }
+  protected override _updatedInput(_context: F.Context, cache: Cache<I, O>): z.infer<I> {
+    return cache[iInput];
+  }
+  protected override _setData(context: F.Context, cache: Cache<I, O>, output: z.infer<O>): T.PPromise<void> {
+    cache[iOutput] ??= this.outputFactory();
+    const updates = [];
+    for (const [id, val] of Object.entries(output)) {
+      cache[iOutput].set(id, val);
+      updates.push(
+        cache[iController].writeKey(context, { key: id, value: val }),
+      );
+    }
+    return T.PPromise.all(updates).map(VoidFn);
+  }
+  protected override _convertCache(cache: Cache<I, O>): z.infer<O> {
+    if (cache[iOutput] === undefined) {
+      throw new Error("Need to go through the [_getData] api");
+    }
+    return cache[iOutput];
+  }
+  protected override _delCache(context: F.Context, cache: Cache<I, O>): T.PPromise<void> {
+    const [controller, ids] = this.getController(cache[iInput]);
+    const updates = [];
+    for (const id of ids) {
+      updates.push(controller.removeKey(context, { key: id }));
+    }
+    return T.PPromise.all(updates).map(VoidFn);
+  }
+}
