@@ -142,9 +142,7 @@ export class WFCollectionCacheRecord<
     for (const [key, value] of Object.entries(output)) {
       out[key] = value;
     }
-    return cache[iController].writeHashFields(context, {
-      value: output.toRecord(),
-    });
+    return cache[iController].writeHashFields(context, { value: output });
   }
   protected override _convertCache(cache: Cache<I, O>): z.infer<O> {
     if (cache[iOutput] === undefined) {
