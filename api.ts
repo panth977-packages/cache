@@ -63,7 +63,7 @@ export class CacheApi<C extends CacheController = any> {
   }
   readKey<T>(context: F.Context, opt: { key?: KEY }): T.PPromise<T | undefined> {
     const key = this._getKey(opt.key);
-    if (this.canExeExists()) {
+    if (this.canExeRead()) {
       context.logDebug(`${this.name}.read(${key})`, "Method not allowed");
       return T.PPromise.resolve(undefined) as any;
     }
@@ -83,9 +83,9 @@ export class CacheApi<C extends CacheController = any> {
     opt: { key?: KEY; fields: KEY[] | AllFields },
   ): T.PPromise<Partial<T>> {
     const key = this._getKey(opt.key);
-    if (this.canExeExists()) {
+    if (this.canExeRead()) {
       context.logDebug(`${this.name}.read(${key}, [${opt.fields}])`, "Method not allowed");
-      return T.PPromise.resolve(void 0) as any;
+      return T.PPromise.resolve({}) as any;
     }
     const start = Date.now();
     return this.cache.readHashFields(context, { ...opt, key }).$then((data) => {
@@ -100,7 +100,7 @@ export class CacheApi<C extends CacheController = any> {
   }
   writeKey<T>(context: F.Context, opt: { key?: KEY; value: T; expiry?: number }): T.PPromise<void> {
     const key = this._getKey(opt.key);
-    if (this.canExeExists()) {
+    if (this.canExeWrite()) {
       context.logDebug(`${this.name}.write(${key})`, "Method not allowed");
       return T.PPromise.resolve(void 0) as any;
     }
@@ -116,7 +116,7 @@ export class CacheApi<C extends CacheController = any> {
   }
   writeHashFields<T extends Record<string, unknown>>(context: F.Context, opt: { key?: KEY; value: T; expiry?: number }): T.PPromise<void> {
     const key = this._getKey(opt.key);
-    if (this.canExeExists()) {
+    if (this.canExeWrite()) {
       context.logDebug(`${this.name}.write(${key}, [${Object.keys(opt.value)}])`, "Method not allowed");
       return T.PPromise.resolve(void 0) as any;
     }
@@ -132,7 +132,7 @@ export class CacheApi<C extends CacheController = any> {
   }
   removeKey(context: F.Context, opt: { key?: KEY }): T.PPromise<void> {
     const key = this._getKey(opt.key);
-    if (this.canExeExists()) {
+    if (this.canExeRemove()) {
       context.logDebug(`${this.name}.remove(${key})`, "Method not allowed");
       return T.PPromise.resolve(void 0) as any;
     }
@@ -148,7 +148,7 @@ export class CacheApi<C extends CacheController = any> {
   }
   removeHashFields(context: F.Context, opt: { key?: KEY; fields: KEY[] | AllFields }): T.PPromise<void> {
     const key = this._getKey(opt.key);
-    if (this.canExeExists()) {
+    if (this.canExeRemove()) {
       context.logDebug(`${this.name}.remove(${key}, [${opt.fields}])`, "Method not allowed");
       return T.PPromise.resolve(void 0) as any;
     }
@@ -167,7 +167,7 @@ export class CacheApi<C extends CacheController = any> {
     opt: { key?: KEY; incrBy: number; maxLimit: number; expiry?: number },
   ): T.PPromise<{ allowed: boolean; value: number }> {
     const key = this._getKey(opt.key);
-    if (this.canExeExists()) {
+    if (this.canExeIncrement()) {
       context.logDebug(`${this.name}.incr(${key}, [+${opt.incrBy}, <${opt.maxLimit}])`, "Method not allowed");
       return T.PPromise.resolve({ allowed: true, value: 0 }) as any;
     }
@@ -187,7 +187,7 @@ export class CacheApi<C extends CacheController = any> {
     opt: { key?: KEY; field: KEY; incrBy: number; maxLimit: number; expiry?: number },
   ): T.PPromise<{ allowed: boolean; value: number }> {
     const key = this._getKey(opt.key);
-    if (this.canExeExists()) {
+    if (this.canExeIncrement()) {
       context.logDebug(`${this.name}.incr(${key}, [${opt.field}, +${opt.incrBy}, <${opt.maxLimit}])`, "Method not allowed");
       return T.PPromise.resolve({ allowed: true, value: 0 }) as any;
     }
