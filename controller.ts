@@ -23,7 +23,6 @@ export abstract class CacheController {
     name: string;
     separator: string;
     expiry: number;
-    prefix: string;
     log: boolean;
     mode: "read-write" | "readonly" | "writeonly" | "ignore";
   }) {
@@ -99,10 +98,7 @@ export abstract class CacheController {
   }
   addPrefix(...prefix: (string | number)[]): this {
     const clone = this.clone();
-    clone.prefix = prefix.reduce<string>(
-      (x, p) => `${x}${this.separator}${p}`,
-      this.prefix,
-    );
+    clone.prefix = `${clone.prefix}${this.separator}${prefix.join(this.separator)}`;
     return clone;
   }
   /********************* Utils *********************/

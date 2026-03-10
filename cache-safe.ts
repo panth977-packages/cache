@@ -147,8 +147,8 @@ export class SafeCacheClient<C extends CacheController> extends CacheController 
     return new SafeCacheClient(this.cache.clone(), this.onError) as this;
   }
   constructor(readonly cache: C, protected onError: (context: F.Context, err: unknown) => void) {
-    const { expiry, log, mode, name, prefix, separator } = CacheController.get(cache);
-    super({ name: `Safe(${name})`, expiry, log, mode, prefix, separator });
+    const { expiry, log, mode, name, separator } = CacheController.get(cache);
+    super({ name: `Safe(${name})`, expiry, log, mode, separator });
   }
   protected override _getKey(key: string | number | null | undefined): string {
     return CacheController.getKey(this.cache, key);
