@@ -102,7 +102,7 @@ export class WFCollectionCache<
         .readHashFields<ReturnType<z.infer<O>["toRecord"]>>(context, {
           fields: "*",
         })
-        .map(({ $, ...result }) => {
+        .$then(({ $, ...result }) => {
           let value = this.outputFactory();
           for (const key in result) {
             value.add(key, result[key]);
@@ -130,7 +130,7 @@ export class WFCollectionCache<
         .readHashFields<ReturnType<z.infer<O>["toRecord"]>>(context, {
           fields: cache[iIds],
         })
-        .map((result) => {
+        .$then((result) => {
           let value = this.outputFactory();
           const notFound = [];
           for (const key of cache[iIds]) {

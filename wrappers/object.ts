@@ -66,7 +66,7 @@ export class WFObjectCache<
     context: F.Context,
     cache: Cache<I, O>,
   ): T.PPromise<void> {
-    return cache[iController].readKey<z.infer<O>>(context, {}).map((data) => {
+    return cache[iController].readKey<z.infer<O>>(context, {}).$then((data) => {
       if (data === undefined) return;
       const value = this.func.output.parse(data);
       cache[iOutput] = value;

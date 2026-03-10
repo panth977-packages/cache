@@ -85,7 +85,7 @@ export class WFCollectionCacheRecord<
     if (cache[iIds] === "*") {
       return cache[iController]
         .readHashFields<Record<Idx, Value<O>>>(context, { fields: "*" })
-        .map(({ $, ...result }) => {
+        .$then(({ $, ...result }) => {
           let value = this.outputFactory();
           for (const key in result) {
             value[key] = result[key];
@@ -105,7 +105,7 @@ export class WFCollectionCacheRecord<
       }
       return cache[iController]
         .readHashFields<z.infer<O>>(context, { fields: cache[iIds] })
-        .map((result) => {
+        .$then((result) => {
           let value = this.outputFactory();
           const notFound: Idx[] = [];
           for (const key of cache[iIds]) {

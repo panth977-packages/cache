@@ -95,7 +95,7 @@ export class WFMultiObjectCache<
       cache[iIds].map((id) =>
         cache[iController].readKey<Value<O>>(context, { key: id }),
       ),
-    ).map((vals) => {
+    ).$then((vals) => {
       let data = this.outputFactory();
       const notFoundIds = [];
       for (let i = 0; i < cache[iIds].length; i++) {
@@ -133,7 +133,7 @@ export class WFMultiObjectCache<
         cache[iController].writeKey(context, { key: id, value: val }),
       );
     }
-    return T.PPromise.all(updates).map(VoidFn);
+    return T.PPromise.all(updates).$then(VoidFn);
   }
   protected override _convertCache(cache: Cache<I, O>): z.infer<O> {
     if (cache[iOutput] === undefined) {
@@ -150,6 +150,6 @@ export class WFMultiObjectCache<
     for (const id of ids) {
       updates.push(controller.removeKey(context, { key: id }));
     }
-    return T.PPromise.all(updates).map(VoidFn);
+    return T.PPromise.all(updates).$then(VoidFn);
   }
 }

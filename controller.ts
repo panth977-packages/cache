@@ -77,7 +77,12 @@ export abstract class CacheController {
   ): T.PPromise<{ allowed: boolean; value: number }>;
   abstract dispose(): void;
   /********************* Builds *********************/
-  protected abstract clone(): this;
+  abstract clone(): this;
+  static get(
+    cache: CacheController,
+  ): { name: string; separator: string; prefix: string; expiry: number; mode: "read-write" | "readonly" | "writeonly" | "ignore"; log: boolean } {
+    return { expiry: cache.expiry, log: cache.log, mode: cache.mode, name: cache.name, prefix: cache.prefix, separator: cache.separator };
+  }
   set(opt: {
     mode?: "read-write" | "readonly" | "writeonly" | "ignore";
     expiry?: number;
@@ -98,19 +103,19 @@ export abstract class CacheController {
     return clone;
   }
   /********************* Utils *********************/
-  protected canExeExists(): boolean {
+  canExeExists(): boolean {
     return this.mode === "read-write" || this.mode === "readonly";
   }
-  protected canExeRead(): boolean {
+  canExeRead(): boolean {
     return this.mode === "read-write" || this.mode === "readonly";
   }
-  protected canExeWrite(): boolean {
+  canExeWrite(): boolean {
     return this.mode === "read-write" || this.mode === "writeonly";
   }
-  protected canExeRemove(): boolean {
+  canExeRemove(): boolean {
     return this.mode === "read-write" || this.mode === "writeonly";
   }
-  protected canExeIncrement(): boolean {
+  canExeIncrement(): boolean {
     return this.mode === "read-write";
   }
 }

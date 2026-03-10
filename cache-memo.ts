@@ -54,7 +54,8 @@ export class MemoCacheClient extends CacheController {
     opt: { key?: KEY },
   ): T.PPromise<boolean> {
     if (this.canExeExists()) {
-      return T.PPromise.reject(new Error("Method not allowed"));
+      // return T.PPromise.reject(new Error("Method not allowed"));
+      return T.PPromise.resolve(false)
     }
     const key = this._getKey(opt.key);
     const exists = key in this.memo;
@@ -68,7 +69,8 @@ export class MemoCacheClient extends CacheController {
     opt: { key?: KEY; fields: Array<KEY> | AllFields },
   ): T.PPromise<Record<string, boolean>> {
     if (this.canExeExists()) {
-      return T.PPromise.reject(new Error("Method not allowed"));
+      // return T.PPromise.reject(new Error("Method not allowed"));
+      return T.PPromise.resolve({})
     }
     const key = this._getKey(opt.key);
     const hashValue = this.memo.get(key);
@@ -98,7 +100,8 @@ export class MemoCacheClient extends CacheController {
     opt: { key?: KEY },
   ): T.PPromise<T | undefined> {
     if (this.canExeRead()) {
-      return T.PPromise.reject(new Error("Method not allowed"));
+      // return T.PPromise.reject(new Error("Method not allowed"));
+      return T.PPromise.resolve<T | undefined>(undefined)
     }
     const start = Date.now();
     const key = this._getKey(opt.key);
@@ -119,7 +122,8 @@ export class MemoCacheClient extends CacheController {
     opt: { key?: KEY; fields: KEY[] | AllFields },
   ): T.PPromise<Partial<T>> {
     if (this.canExeRead()) {
-      return T.PPromise.reject(new Error("Method not allowed"));
+      // return T.PPromise.reject(new Error("Method not allowed"));
+      return T.PPromise.resolve({})
     }
     const start = Date.now();
     const key = this._getKey(opt.key);
@@ -151,7 +155,8 @@ export class MemoCacheClient extends CacheController {
     opt: { key?: KEY; value: T },
   ): T.PPromise<void> {
     if (this.canExeWrite()) {
-      return T.PPromise.reject(new Error("Method not allowed"));
+      // return T.PPromise.reject(new Error("Method not allowed"));
+      return T.PPromise.resolve<void>(void 0)
     }
     const start = Date.now();
     const key = this._getKey(opt.key);
@@ -172,7 +177,8 @@ export class MemoCacheClient extends CacheController {
     opt: { key?: KEY; value: T },
   ): T.PPromise<void> {
     if (this.canExeWrite()) {
-      return T.PPromise.reject(new Error("Method not allowed"));
+      // return T.PPromise.reject(new Error("Method not allowed"));
+      return T.PPromise.resolve<void>(void 0)
     }
     const start = Date.now();
     const key = this._getKey(opt.key);
@@ -198,7 +204,8 @@ export class MemoCacheClient extends CacheController {
 
   override removeKey(context: F.Context, opt: { key?: KEY }): T.PPromise<void> {
     if (this.canExeRemove()) {
-      return T.PPromise.reject(new Error("Method not allowed"));
+      // return T.PPromise.reject(new Error("Method not allowed"));
+      return T.PPromise.resolve<void>(void 0)
     }
     const start = Date.now();
     const key = this._getKey(opt.key);
@@ -215,7 +222,8 @@ export class MemoCacheClient extends CacheController {
     opt: { key?: KEY; fields: KEY[] | AllFields },
   ): T.PPromise<void> {
     if (this.canExeExists()) {
-      return T.PPromise.reject(new Error("Method not allowed"));
+      // return T.PPromise.reject(new Error("Method not allowed"));
+      return T.PPromise.resolve<void>(void 0)
     }
     const start = Date.now();
     const key = this._getKey(opt.key);
@@ -264,7 +272,7 @@ export class MemoCacheClient extends CacheController {
     }
     this.memo.clear();
   }
-  protected override clone(): this {
+  override clone(): this {
     return new MemoCacheClient(
       {
         expiry: this.expiry,
