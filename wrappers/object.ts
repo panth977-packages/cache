@@ -1,11 +1,11 @@
 import type { F } from "@panth977/functions";
 import { type AllowedTypes, WFGenericCache } from "./_helper.ts";
 import type z from "zod";
-import type { CacheController } from "../exports.ts";
+import type { CacheApi } from "../exports.ts";
 import type { T } from "@panth977/tools";
 
 type Cache<I extends z.ZodType, O extends z.ZodType> = [
-  CacheController,
+  CacheApi,
   z.infer<I>,
   ...([z.infer<O>] | []),
 ];
@@ -44,18 +44,18 @@ export class WFObjectCache<
   O extends F.FuncOutput,
   Type extends AllowedTypes,
 > extends WFGenericCache<Cache<I, O>, I, O, Type> {
-  protected readonly getController: (input: z.infer<I>) => [CacheController];
+  protected readonly getController: (input: z.infer<I>) => [CacheApi];
   constructor({
     getController,
     onInit,
   }: {
     onInit?: (hook: WFObjectCache<I, O, Type>) => void;
-    getController: (input: z.infer<I>) => [CacheController];
+    getController: (input: z.infer<I>) => [CacheApi];
   }) {
     super({ onInit } as any);
     this.getController = getController;
   }
-  protected override _getCacheController(
+  protected override _getCacheApi(
     _context: F.Context,
     input: z.infer<I>,
   ): Cache<I, O> {

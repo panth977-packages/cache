@@ -5,5 +5,5 @@
 
 export * from "./controller.ts";
 export * from "./cache-memo.ts";
-export * from "./cache-safe.ts";
+export * from "./api.ts";
 export * from "./wrappers/index.ts";

@@ -21,10 +21,10 @@ class Hash<T extends Record<string, any> = Record<string, any>> {
 /**
  * @example
  * ```ts
- * import { CACHE } from '@panth977/cache';
+ * import { C } from '@panth977/cache';
  *
- * const cache = new CACHE.CacheController({
- *   client: new CACHE.MemoCacheClient(),
+ * const cache = new C.CacheApi({
+ *   client: new C.MemoCacheClient(),
  *   allowed: {"*": true},
  *   defaultExpiry: 300000,
  *   log: false,
@@ -35,42 +35,22 @@ class Hash<T extends Record<string, any> = Record<string, any>> {
  */
 export class MemoCacheClient extends CacheController {
   readonly memo: Map<KEY, Obj | Hash>;
-  constructor(
-    opt: {
-      name: string;
-      separator: string;
-      expiry: number;
-      prefix: string;
-      log: boolean;
-      mode: "read-write" | "readonly" | "writeonly" | "ignore";
-    },
-    memo?: Map<KEY, Obj | Hash>,
-  ) {
-    super(opt);
+  constructor(memo?: Map<KEY, Obj | Hash>) {
+    super();
     this.memo = memo ?? new Map();
   }
   override existsKey(
     _context: F.Context,
-    opt: { key?: KEY },
+    opt: { key: KEY },
   ): T.PPromise<boolean> {
-    if (this.canExeExists()) {
-      // return T.PPromise.reject(new Error("Method not allowed"));
-      return T.PPromise.resolve(false);
-    }
-    const key = this._getKey(opt.key);
-    const exists = key in this.memo;
+    const exists = opt.key in this.memo;
     return T.PPromise.resolve(exists);
   }
   override existsHashFields(
     _context: F.Context,
-    opt: { key?: KEY; fields: Array<KEY> | AllFields },
+    opt: { key: KEY; fields: Array<KEY> | AllFields },
   ): T.PPromise<Record<string, boolean>> {
-    if (this.canExeExists()) {
-      // return T.PPromise.reject(new Error("Method not allowed"));
-      return T.PPromise.resolve({});
-    }
-    const key = this._getKey(opt.key);
-    const hashValue = this.memo.get(key);
+    const hashValue = this.memo.get(opt.key);
     if (!hashValue) {
       return T.PPromise.resolve({});
     } else if (hashValue instanceof Hash === false) {
@@ -91,14 +71,9 @@ export class MemoCacheClient extends CacheController {
   }
   override readKey<T>(
     _context: F.Context,
-    opt: { key?: KEY },
+    opt: { key: KEY },
   ): T.PPromise<T | undefined> {
-    if (this.canExeRead()) {
-      // return T.PPromise.reject(new Error("Method not allowed"));
-      return T.PPromise.resolve<T | undefined>(undefined);
-    }
-    const key = this._getKey(opt.key);
-    const value = this.memo.get(key) as Obj<T>;
+    const value = this.memo.get(opt.key) as Obj<T>;
     if (!value) {
       return T.PPromise.resolve<T | undefined>(undefined);
     } else if (value instanceof Obj === false) {
@@ -109,14 +84,9 @@ export class MemoCacheClient extends CacheController {
   }
   override readHashFields<T extends Record<string, unknown>>(
     _context: F.Context,
-    opt: { key?: KEY; fields: KEY[] | AllFields },
+    opt: { key: KEY; fields: KEY[] | AllFields },
   ): T.PPromise<Partial<T>> {
-    if (this.canExeRead()) {
-      // return T.PPromise.reject(new Error("Method not allowed"));
-      return T.PPromise.resolve({});
-    }
-    const key = this._getKey(opt.key);
-    const hashValue = this.memo.get(key) as Hash<T>;
+    const hashValue = this.memo.get(opt.key) as Hash<T>;
     if (!hashValue) {
       return T.PPromise.resolve({});
     } else if (hashValue instanceof Hash === false) {
@@ -135,66 +105,46 @@ export class MemoCacheClient extends CacheController {
   }
   override writeKey<T>(
     _context: F.Context,
-    opt: { key?: KEY; value: T },
+    opt: { key: KEY; value: T; expiry: number },
   ): T.PPromise<void> {
-    if (this.canExeWrite()) {
-      // return T.PPromise.reject(new Error("Method not allowed"));
-      return T.PPromise.resolve<void>(void 0);
-    }
-    const key = this._getKey(opt.key);
-    const value = this.memo.get(key);
+    const value = this.memo.get(opt.key);
     if (value) clearTimeout(value.timeout);
     const timeout = setTimeout(
-      this.memo.delete.bind(this.memo, key),
-      this.expiry,
+      this.memo.delete.bind(this.memo, opt.key),
+      opt.expiry,
     );
-    this.memo.set(key, new Obj(opt.value, timeout));
+    this.memo.set(opt.key, new Obj(opt.value, timeout));
     return T.PPromise.resolve<void>(undefined);
   }
   override writeHashFields<T extends Record<string, unknown>>(
     _context: F.Context,
-    opt: { key?: KEY; value: T },
+    opt: { key: KEY; value: T; expiry: number },
   ): T.PPromise<void> {
-    if (this.canExeWrite()) {
-      // return T.PPromise.reject(new Error("Method not allowed"));
-      return T.PPromise.resolve<void>(void 0);
-    }
-    const key = this._getKey(opt.key);
-    const value = this.memo.get(key);
+    const value = this.memo.get(opt.key);
     if (value instanceof Hash) {
       Object.assign(value.val, opt.value);
     } else {
       if (value) clearTimeout(value.timeout);
       const timeout = setTimeout(
-        this.memo.delete.bind(this.memo, key),
-        this.expiry,
+        this.memo.delete.bind(this.memo, opt.key),
+        opt.expiry,
       );
-      this.memo.set(key, new Hash({ ...opt.value }, timeout));
+      this.memo.set(opt.key, new Hash({ ...opt.value }, timeout));
     }
     return T.PPromise.resolve<void>(undefined);
   }
 
-  override removeKey(_context: F.Context, opt: { key?: KEY }): T.PPromise<void> {
-    if (this.canExeRemove()) {
-      // return T.PPromise.reject(new Error("Method not allowed"));
-      return T.PPromise.resolve<void>(void 0);
-    }
-    const key = this._getKey(opt.key);
-    const value = this.memo.get(key);
+  override removeKey(_context: F.Context, opt: { key: KEY }): T.PPromise<void> {
+    const value = this.memo.get(opt.key);
     if (value) clearTimeout(value.timeout);
-    this.memo.delete(key);
+    this.memo.delete(opt.key);
     return T.PPromise.resolve<void>(undefined);
   }
   override removeHashFields(
     _context: F.Context,
-    opt: { key?: KEY; fields: KEY[] | AllFields },
+    opt: { key: KEY; fields: KEY[] | AllFields },
   ): T.PPromise<void> {
-    if (this.canExeExists()) {
-      // return T.PPromise.reject(new Error("Method not allowed"));
-      return T.PPromise.resolve<void>(void 0);
-    }
-    const key = this._getKey(opt.key);
-    const hashValue = this.memo.get(key);
+    const hashValue = this.memo.get(opt.key);
     if (!hashValue) {
       return T.PPromise.resolve<void>(undefined);
     } else if (hashValue instanceof Hash === false) {
@@ -202,14 +152,14 @@ export class MemoCacheClient extends CacheController {
     } else {
       if (opt.fields === "*") {
         clearTimeout(hashValue.timeout);
-        this.memo.delete(key);
+        this.memo.delete(opt.key);
       } else {
         for (const field of opt.fields) {
           delete hashValue.val[field];
         }
         if (Object.keys(hashValue.val).length === 0) {
           clearTimeout(hashValue.timeout);
-          this.memo.delete(key);
+          this.memo.delete(opt.key);
         }
       }
       return T.PPromise.resolve<void>(undefined);
@@ -217,13 +167,13 @@ export class MemoCacheClient extends CacheController {
   }
   override incrementKey(
     _c: F.Context,
-    _i: { key?: KEY; incrBy: number; maxLimit: number },
+    _i: { expiry: number; key: KEY; incrBy: number; maxLimit: number },
   ): T.PPromise<{ allowed: boolean; value: number }> {
     return T.PPromise.reject(new Error("Unimplemented!"));
   }
   override incrementHashField(
     _c: F.Context,
-    _i: { key?: KEY; field: KEY; incrBy: number; maxLimit: number },
+    _i: { expiry: number; key: KEY; field: KEY; incrBy: number; maxLimit: number },
   ): T.PPromise<{ allowed: boolean; value: number }> {
     return T.PPromise.reject(new Error("Unimplemented!"));
   }
@@ -232,18 +182,5 @@ export class MemoCacheClient extends CacheController {
       clearTimeout(value.timeout);
     }
     this.memo.clear();
-  }
-  override clone(): this {
-    return new MemoCacheClient(
-      {
-        expiry: this.expiry,
-        log: this.log,
-        mode: this.mode,
-        name: this.name,
-        prefix: this.prefix,
-        separator: this.separator,
-      },
-      this.memo,
-    ) as this;
   }
 }

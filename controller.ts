@@ -7,114 +7,44 @@ export type AllFields = "*";
  * wrappers for {@link AbstractCacheClient} to streamline the
  */
 export abstract class CacheController {
-  protected name: string;
-  protected separator: string;
-  protected prefix: string = "";
-  protected expiry: number;
-  protected mode: "read-write" | "readonly" | "writeonly" | "ignore";
-  protected log: boolean;
-  constructor({
-    name,
-    expiry,
-    log,
-    separator,
-    mode,
-  }: {
-    name: string;
-    separator: string;
-    expiry: number;
-    log: boolean;
-    mode: "read-write" | "readonly" | "writeonly" | "ignore";
-  }) {
-    this.name = name;
-    this.separator = separator;
-    this.expiry = expiry;
-    this.mode = mode;
-    this.log = log;
-  }
-  static getKey(cache: CacheController, key: string | number | null | undefined): string {
-    return cache._getKey(key);
-  }
-  protected _getKey(key: string | number | null | undefined): string {
-    if (key === "" || key === null || key === undefined) return this.prefix;
-    return `${this.prefix}${this.separator}${key}`;
-  }
+  constructor() {}
   /********************* Controllers *********************/
   abstract existsKey(
     context: F.Context,
-    opt: { key?: KEY },
+    opt: { key: KEY },
   ): T.PPromise<boolean>;
   abstract existsHashFields(
     context: F.Context,
-    opt: { key?: KEY; fields: Array<KEY> | AllFields },
+    opt: { key: KEY; fields: Array<KEY> | AllFields },
   ): T.PPromise<Record<string, boolean>>;
   abstract readKey<T>(
     context: F.Context,
-    opt: { key?: KEY },
+    opt: { key: KEY },
   ): T.PPromise<T | undefined>;
   abstract readHashFields<T extends Record<string, unknown>>(
     context: F.Context,
-    opt: { key?: KEY; fields: KEY[] | AllFields },
+    opt: { key: KEY; fields: KEY[] | AllFields },
   ): T.PPromise<Partial<T>>;
   abstract writeKey<T>(
     context: F.Context,
-    opt: { key?: KEY; value: T },
+    opt: { expiry: number; key: KEY; value: T },
   ): T.PPromise<void>;
   abstract writeHashFields<T extends Record<string, unknown>>(
     context: F.Context,
-    opt: { key?: KEY; value: T },
+    opt: { expiry: number; key: KEY; value: T },
   ): T.PPromise<void>;
-  abstract removeKey(context: F.Context, opt: { key?: KEY }): T.PPromise<void>;
+  abstract removeKey(context: F.Context, opt: { key: KEY }): T.PPromise<void>;
   abstract removeHashFields(
     context: F.Context,
-    opt: { key?: KEY; fields: KEY[] | AllFields },
+    opt: { key: KEY; fields: KEY[] | AllFields },
   ): T.PPromise<void>;
   abstract incrementKey(
     context: F.Context,
-    opt: { key?: KEY; incrBy: number; maxLimit: number },
+    opt: { expiry: number; key: KEY; incrBy: number; maxLimit: number },
   ): T.PPromise<{ allowed: boolean; value: number }>;
   abstract incrementHashField(
     context: F.Context,
-    opt: { key?: KEY; field: KEY; incrBy: number; maxLimit: number },
+    opt: { expiry: number; key: KEY; field: KEY; incrBy: number; maxLimit: number },
   ): T.PPromise<{ allowed: boolean; value: number }>;
   abstract dispose(): void;
-  /********************* Builds *********************/
-  abstract clone(): this;
-  static get(
-    cache: CacheController,
-  ): { name: string; separator: string; prefix: string; expiry: number; mode: "read-write" | "readonly" | "writeonly" | "ignore"; log: boolean } {
-    return { expiry: cache.expiry, log: cache.log, mode: cache.mode, name: cache.name, prefix: cache.prefix, separator: cache.separator };
-  }
-  set(opt: {
-    mode?: "read-write" | "readonly" | "writeonly" | "ignore";
-    expiry?: number;
-    log?: boolean;
-  }): this {
-    const clone = this.clone();
-    if (opt.mode !== undefined) clone.mode = opt.mode;
-    if (opt.expiry !== undefined) clone.expiry = opt.expiry;
-    if (opt.log !== undefined) clone.log = opt.log;
-    return clone;
-  }
-  addPrefix(...prefix: (string | number)[]): this {
-    const clone = this.clone();
-    clone.prefix = `${clone.prefix}${this.separator}${prefix.join(this.separator)}`;
-    return clone;
-  }
-  /********************* Utils *********************/
-  canExeExists(): boolean {
-    return this.mode === "read-write" || this.mode === "readonly";
-  }
-  canExeRead(): boolean {
-    return this.mode === "read-write" || this.mode === "readonly";
-  }
-  canExeWrite(): boolean {
-    return this.mode === "read-write" || this.mode === "writeonly";
-  }
-  canExeRemove(): boolean {
-    return this.mode === "read-write" || this.mode === "writeonly";
-  }
-  canExeIncrement(): boolean {
-    return this.mode === "read-write";
-  }
 }

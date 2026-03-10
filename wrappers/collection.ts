@@ -1,12 +1,12 @@
 import type { F } from "@panth977/functions";
 import { type AllowedTypes, WFGenericCache } from "./_helper.ts";
 import type z from "zod";
-import type { CacheController } from "../exports.ts";
+import type { CacheApi } from "../exports.ts";
 import { T } from "@panth977/tools";
 
 type Output = T.zPreIndexedStructure<any, any>;
 type Cache<I extends z.ZodType, O extends Output> = [
-  CacheController,
+  CacheApi,
   z.infer<I>,
   Idx<O>[] | "*",
   ...([z.infer<O>] | [])
@@ -60,7 +60,7 @@ export class WFCollectionCache<
 > extends WFGenericCache<Cache<I, O>, I, O, Type> {
   protected readonly getController: (
     input: z.infer<I>
-  ) => [CacheController, Idx<O>[] | "*"];
+  ) => [CacheApi, Idx<O>[] | "*"];
   protected readonly updateInput: (
     input: z.infer<I>,
     notFoundIds: Idx<O>[] | "*",
@@ -72,7 +72,7 @@ export class WFCollectionCache<
     onInit,
   }: {
     onInit?: (hook: WFCollectionCache<I, O, Type>) => void;
-    getController: (input: z.infer<I>) => [CacheController, Idx<O>[] | "*"];
+    getController: (input: z.infer<I>) => [CacheApi, Idx<O>[] | "*"];
     updateInput: (
       input: z.infer<I>,
       notFoundIds: Idx<O>[] | "*",
@@ -86,7 +86,7 @@ export class WFCollectionCache<
   private outputFactory(): z.infer<O> {
     return new T.PreIndexedStructure<any, any>(0, [], []) as z.infer<O>;
   }
-  protected override _getCacheController(
+  protected override _getCacheApi(
     _context: F.Context,
     input: z.infer<I>
   ): Cache<I, O> {

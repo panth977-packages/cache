@@ -31,7 +31,7 @@ export abstract class WFGenericCache<
   }
   protected override SyncFunc: undefined;
   protected override StreamFunc: undefined;
-  protected abstract _getCacheController(
+  protected abstract _getCacheApi(
     context: F.Context,
     input: z.infer<I>,
   ): C;
@@ -49,7 +49,7 @@ export abstract class WFGenericCache<
     context: F.Context,
     input: z.infer<I>,
   ): T.PPromise<z.infer<O>> {
-    const cache = this._getCacheController(context, input);
+    const cache = this._getCacheApi(context, input);
     return this._getData(context, cache).map(
       this._convertCache.bind(this, cache),
     );
@@ -59,11 +59,11 @@ export abstract class WFGenericCache<
     input: z.infer<I>,
     output: z.infer<O>,
   ): T.PPromise<void> {
-    const cache = this._getCacheController(context, input);
+    const cache = this._getCacheApi(context, input);
     return this._setData(context, cache, output);
   }
   del(context: F.Context, input: z.infer<I>): T.PPromise<void> {
-    const cache = this._getCacheController(context, input);
+    const cache = this._getCacheApi(context, input);
     return this._delCache(context, cache);
   }
   protected override AsyncFunc(
@@ -71,7 +71,7 @@ export abstract class WFGenericCache<
     context: F.Context<F.Func<I, O, "AsyncFunc">>,
     input: z.infer<I>,
   ): T.PPromise<z.infer<O>> {
-    const cache = this._getCacheController(context, input);
+    const cache = this._getCacheApi(context, input);
     return this._getData(context, cache).map(() => {
       if (!this._shouldInvoke(cache)) {
         return T.PPromise.resolve(this._convertCache(cache));

@@ -1,12 +1,12 @@
 import type { F } from "@panth977/functions";
 import { type AllowedTypes, WFGenericCache } from "./_helper.ts";
 import type z from "zod";
-import type { CacheController } from "../exports.ts";
+import type { CacheApi } from "../exports.ts";
 import { T } from "@panth977/tools";
 
 type Output = z.ZodRecord<z.ZodString, any>;
 type Cache<I extends z.ZodType, O extends Output> = [
-  CacheController,
+  CacheApi<any>,
   z.infer<I>,
   Idx[] | "*",
   ...([z.infer<O>] | []),
@@ -59,11 +59,11 @@ export class WFCollectionCacheRecord<
   O extends Output,
   Type extends AllowedTypes,
 > extends WFGenericCache<Cache<I, O>, I, O, Type> {
-  protected readonly getController: (input: z.infer<I>) => [CacheController, Idx[] | "*"];
+  protected readonly getController: (input: z.infer<I>) => [CacheApi, Idx[] | "*"];
   protected readonly updateInput: (input: z.infer<I>, notFoundIds: Idx[] | "*", found: Idx[]) => z.infer<I>;
   constructor({ getController, updateInput, onInit }: {
     onInit?: (hook: WFCollectionCacheRecord<I, O, Type>) => void;
-    getController: (input: z.infer<I>) => [CacheController, Idx[] | "*"];
+    getController: (input: z.infer<I>) => [CacheApi, Idx[] | "*"];
     updateInput: (
       input: z.infer<I>,
       notFoundIds: Idx[] | "*",
@@ -77,7 +77,7 @@ export class WFCollectionCacheRecord<
   private outputFactory(): Record<Idx, Value<O>> {
     return {};
   }
-  protected override _getCacheController(_context: F.Context, input: z.infer<I>): Cache<I, O> {
+  protected override _getCacheApi(_context: F.Context, input: z.infer<I>): Cache<I, O> {
     const [controller, ids] = this.getController(input);
     return [controller, input, ids];
   }
