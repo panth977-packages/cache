@@ -8,7 +8,6 @@ export type AllFields = "*";
  */
 export abstract class CacheController {
   constructor() {}
-  /********************* Controllers *********************/
   abstract existsKey(
     context: F.Context,
     opt: { key: KEY },
