@@ -98,10 +98,10 @@ export class WFMultiObjectCacheRecord<I extends F.FuncInput, O extends Output, T
     return cache[iInput];
   }
   protected override _setData(context: F.Context, cache: Cache<I, O>, output: z.infer<O>): T.PPromise<void> {
-    cache[iOutput] ??= this.outputFactory();
+    const ret: Record<string, Value<O>> = cache[iOutput] ??= this.outputFactory();
     const updates = [];
     for (const [id, val] of Object.entries(output)) {
-      cache[iOutput].set(id, val);
+      ret[id] = val;
       updates.push(
         cache[iController].writeKey(context, { key: id, value: val }),
       );

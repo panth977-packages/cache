@@ -138,9 +138,9 @@ export class WFCollectionCacheRecord<
     return cache[iInput];
   }
   protected override _setData(context: F.Context, cache: Cache<I, O>, output: z.infer<O>): T.PPromise<void> {
-    cache[iOutput] ??= this.outputFactory();
+    const out: Record<Idx, Value<O>> = cache[iOutput] ??= this.outputFactory();
     for (const [key, value] of Object.entries(output)) {
-      cache[iOutput].set(key, value);
+      out[key] = value;
     }
     return cache[iController].writeHashFields(context, {
       value: output.toRecord(),
