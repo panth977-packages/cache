@@ -50,33 +50,27 @@ export class MemoCacheClient extends CacheController {
     this.memo = memo ?? new Map();
   }
   override existsKey(
-    context: F.Context,
+    _context: F.Context,
     opt: { key?: KEY },
   ): T.PPromise<boolean> {
     if (this.canExeExists()) {
       // return T.PPromise.reject(new Error("Method not allowed"));
-      return T.PPromise.resolve(false)
+      return T.PPromise.resolve(false);
     }
     const key = this._getKey(opt.key);
     const exists = key in this.memo;
-    if (this.log) {
-      context.logMsg(`${this.name}.exists(${key})`, "");
-    }
     return T.PPromise.resolve(exists);
   }
   override existsHashFields(
-    context: F.Context,
+    _context: F.Context,
     opt: { key?: KEY; fields: Array<KEY> | AllFields },
   ): T.PPromise<Record<string, boolean>> {
     if (this.canExeExists()) {
       // return T.PPromise.reject(new Error("Method not allowed"));
-      return T.PPromise.resolve({})
+      return T.PPromise.resolve({});
     }
     const key = this._getKey(opt.key);
     const hashValue = this.memo.get(key);
-    if (this.log) {
-      context.logMsg(`${this.name}.exists(${key}, [${opt.fields}])`, "");
-    }
     if (!hashValue) {
       return T.PPromise.resolve({});
     } else if (hashValue instanceof Hash === false) {
@@ -96,19 +90,15 @@ export class MemoCacheClient extends CacheController {
     }
   }
   override readKey<T>(
-    context: F.Context,
+    _context: F.Context,
     opt: { key?: KEY },
   ): T.PPromise<T | undefined> {
     if (this.canExeRead()) {
       // return T.PPromise.reject(new Error("Method not allowed"));
-      return T.PPromise.resolve<T | undefined>(undefined)
+      return T.PPromise.resolve<T | undefined>(undefined);
     }
-    const start = Date.now();
     const key = this._getKey(opt.key);
     const value = this.memo.get(key) as Obj<T>;
-    if (this.log) {
-      context.logMsg(`${this.name}.read(${key})`, `${Date.now() - start} ms`);
-    }
     if (!value) {
       return T.PPromise.resolve<T | undefined>(undefined);
     } else if (value instanceof Obj === false) {
@@ -118,22 +108,15 @@ export class MemoCacheClient extends CacheController {
     }
   }
   override readHashFields<T extends Record<string, unknown>>(
-    context: F.Context,
+    _context: F.Context,
     opt: { key?: KEY; fields: KEY[] | AllFields },
   ): T.PPromise<Partial<T>> {
     if (this.canExeRead()) {
       // return T.PPromise.reject(new Error("Method not allowed"));
-      return T.PPromise.resolve({})
+      return T.PPromise.resolve({});
     }
-    const start = Date.now();
     const key = this._getKey(opt.key);
     const hashValue = this.memo.get(key) as Hash<T>;
-    if (this.log) {
-      context.logMsg(
-        `${this.name}.read(${key}, [${opt.fields}])`,
-        `${Date.now() - start} ms`,
-      );
-    }
     if (!hashValue) {
       return T.PPromise.resolve({});
     } else if (hashValue instanceof Hash === false) {
@@ -151,14 +134,13 @@ export class MemoCacheClient extends CacheController {
     }
   }
   override writeKey<T>(
-    context: F.Context,
+    _context: F.Context,
     opt: { key?: KEY; value: T },
   ): T.PPromise<void> {
     if (this.canExeWrite()) {
       // return T.PPromise.reject(new Error("Method not allowed"));
-      return T.PPromise.resolve<void>(void 0)
+      return T.PPromise.resolve<void>(void 0);
     }
-    const start = Date.now();
     const key = this._getKey(opt.key);
     const value = this.memo.get(key);
     if (value) clearTimeout(value.timeout);
@@ -167,20 +149,16 @@ export class MemoCacheClient extends CacheController {
       this.expiry,
     );
     this.memo.set(key, new Obj(opt.value, timeout));
-    if (this.log) {
-      context.logMsg(`${this.name}.write(${key})`, `${Date.now() - start} ms`);
-    }
     return T.PPromise.resolve<void>(undefined);
   }
   override writeHashFields<T extends Record<string, unknown>>(
-    context: F.Context,
+    _context: F.Context,
     opt: { key?: KEY; value: T },
   ): T.PPromise<void> {
     if (this.canExeWrite()) {
       // return T.PPromise.reject(new Error("Method not allowed"));
-      return T.PPromise.resolve<void>(void 0)
+      return T.PPromise.resolve<void>(void 0);
     }
-    const start = Date.now();
     const key = this._getKey(opt.key);
     const value = this.memo.get(key);
     if (value instanceof Hash) {
@@ -193,47 +171,30 @@ export class MemoCacheClient extends CacheController {
       );
       this.memo.set(key, new Hash({ ...opt.value }, timeout));
     }
-    if (this.log) {
-      context.logMsg(
-        `${this.name}.write(${key}, [${Object.keys(opt.value)}])`,
-        `${Date.now() - start} ms`,
-      );
-    }
     return T.PPromise.resolve<void>(undefined);
   }
 
-  override removeKey(context: F.Context, opt: { key?: KEY }): T.PPromise<void> {
+  override removeKey(_context: F.Context, opt: { key?: KEY }): T.PPromise<void> {
     if (this.canExeRemove()) {
       // return T.PPromise.reject(new Error("Method not allowed"));
-      return T.PPromise.resolve<void>(void 0)
+      return T.PPromise.resolve<void>(void 0);
     }
-    const start = Date.now();
     const key = this._getKey(opt.key);
     const value = this.memo.get(key);
     if (value) clearTimeout(value.timeout);
     this.memo.delete(key);
-    if (this.log) {
-      context.logMsg(`${this.name}.remove(${key})`, `${Date.now() - start} ms`);
-    }
     return T.PPromise.resolve<void>(undefined);
   }
   override removeHashFields(
-    context: F.Context,
+    _context: F.Context,
     opt: { key?: KEY; fields: KEY[] | AllFields },
   ): T.PPromise<void> {
     if (this.canExeExists()) {
       // return T.PPromise.reject(new Error("Method not allowed"));
-      return T.PPromise.resolve<void>(void 0)
+      return T.PPromise.resolve<void>(void 0);
     }
-    const start = Date.now();
     const key = this._getKey(opt.key);
     const hashValue = this.memo.get(key);
-    if (this.log) {
-      context.logMsg(
-        `${this.name}.remove(${key}, [${opt.fields}])`,
-        `${Date.now() - start} ms`,
-      );
-    }
     if (!hashValue) {
       return T.PPromise.resolve<void>(undefined);
     } else if (hashValue instanceof Hash === false) {

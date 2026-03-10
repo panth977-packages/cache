@@ -33,6 +33,9 @@ export abstract class CacheController {
     this.mode = mode;
     this.log = log;
   }
+  static getKey(cache: CacheController, key: string | number | null | undefined): string {
+    return cache._getKey(key);
+  }
   protected _getKey(key: string | number | null | undefined): string {
     if (key === "" || key === null || key === undefined) return this.prefix;
     return `${this.prefix}${this.separator}${key}`;
