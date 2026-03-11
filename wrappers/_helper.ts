@@ -43,24 +43,17 @@ export abstract class WFGenericCache<
   ): T.PPromise<void>;
   protected abstract _delCache(context: F.Context<F.Func<I, O, "AsyncFunc">>, cache: C): T.PPromise<void>;
   protected abstract _convertCache(cache: C): z.infer<O>;
-  get(
-    context: F.Context<F.Func<I, O, "AsyncFunc">>,
-    input: z.infer<I>,
-  ): T.PPromise<z.infer<O>> {
+  get(context: F.Context, input: z.infer<I>): T.PPromise<z.infer<O>> {
     const cache = this._getCacheApi(context, input);
     return this._getData(context, cache).map(
       this._convertCache.bind(this, cache),
     );
   }
-  set(
-    context: F.Context<F.Func<I, O, "AsyncFunc">>,
-    input: z.infer<I>,
-    output: z.infer<O>,
-  ): T.PPromise<void> {
+  set(context: F.Context, input: z.infer<I>, output: z.infer<O>): T.PPromise<void> {
     const cache = this._getCacheApi(context, input);
     return this._setData(context, cache, output);
   }
-  del(context: F.Context<F.Func<I, O, "AsyncFunc">>, input: z.infer<I>): T.PPromise<void> {
+  del(context: F.Context, input: z.infer<I>): T.PPromise<void> {
     const cache = this._getCacheApi(context, input);
     return this._delCache(context, cache);
   }
