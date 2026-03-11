@@ -106,6 +106,7 @@ export class WFMultiObjectCache<
         }
       }
       data = this.func.output.parse(data);
+      cache[iOutput] = data;
       cache[iInput] = this.updateInput(cache[iInput], notFoundIds);
     });
   }

@@ -71,7 +71,7 @@ export class WFMultiObjectCacheRecord<I extends F.FuncInput, O extends Output, T
   protected override _getData(context: F.Context, cache: Cache<I, O>): T.PPromise<void> {
     if (cache[iIds].length === 0) {
       cache[iOutput] = this.outputFactory();
-      return T.PPromise.resolve<void>(undefined);
+      return T.PPromise.resolve<void>(void 0);
     }
     return T.PPromise.all(
       cache[iIds].map((id) => cache[iController].readKey<Value<O>>(context, { key: id })),
@@ -86,6 +86,7 @@ export class WFMultiObjectCacheRecord<I extends F.FuncInput, O extends Output, T
         }
       }
       data = this.func.output.parse(data);
+      cache[iOutput] = data;
       cache[iInput] = this.updateInput(cache[iInput], notFoundIds);
     });
   }
