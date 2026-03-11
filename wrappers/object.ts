@@ -1,5 +1,5 @@
 import type { F } from "@panth977/functions";
-import { type AllowedTypes, WFGenericCache } from "./_helper.ts";
+import { WFGenericCache } from "./_helper.ts";
 import type z from "zod";
 import type { CacheApi } from "../exports.ts";
 import type { T } from "@panth977/tools";
@@ -42,14 +42,13 @@ const iOutput = 2;
 export class WFObjectCache<
   I extends F.FuncInput,
   O extends F.FuncOutput,
-  Type extends AllowedTypes,
-> extends WFGenericCache<Cache<I, O>, I, O, Type> {
+> extends WFGenericCache<Cache<I, O>, I, O> {
   protected readonly getController: (input: z.infer<I>) => [CacheApi];
   constructor({
     getController,
     onInit,
   }: {
-    onInit?: (hook: WFObjectCache<I, O, Type>) => void;
+    onInit?: (hook: WFObjectCache<I, O>) => void;
     getController: (input: z.infer<I>) => [CacheApi];
   }) {
     super({ onInit } as any);
@@ -63,13 +62,13 @@ export class WFObjectCache<
     return [controller, input];
   }
   protected override _getData(
-    context: F.Context,
+    context: F.Context<F.Func<I, O, "AsyncFunc">>,
     cache: Cache<I, O>,
   ): T.PPromise<void> {
     return cache[iController].readKey<z.infer<O>>(context, {}).$then((data) => {
       if (data === undefined) return;
-      const value = this.func.output.parse(data);
-      cache[iOutput] = value;
+      const value = this.func.output.safeParse(data, { path: [this.func.refString("Cache")] });
+      if (value.success) cache[iOutput] = value.data;
     });
   }
   protected override _shouldInvoke(cache: Cache<I, O>): boolean {

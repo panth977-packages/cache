@@ -1,10 +1,10 @@
 import type { F } from "@panth977/functions";
-import { type AllowedTypes, WFGenericCache } from "./_helper.ts";
+import { WFGenericCache } from "./_helper.ts";
 import type z from "zod";
 import type { CacheApi } from "../exports.ts";
 import { T } from "@panth977/tools";
 
-type Output = z.ZodRecord<z.ZodString, any>;
+type Output = z.ZodRecord<z.ZodString, z.ZodType>;
 type Cache<I extends z.ZodType, O extends Output> = [
   CacheApi<any>,
   z.infer<I>,
@@ -57,12 +57,11 @@ type Value<O extends Output> = z.infer<O["valueSchema"]>;
 export class WFCollectionCacheRecord<
   I extends F.FuncInput,
   O extends Output,
-  Type extends AllowedTypes,
-> extends WFGenericCache<Cache<I, O>, I, O, Type> {
+> extends WFGenericCache<Cache<I, O>, I, O> {
   protected readonly getController: (input: z.infer<I>) => [CacheApi, Idx[] | "*"];
   protected readonly updateInput: (input: z.infer<I>, notFoundIds: Idx[] | "*", found: Idx[]) => z.infer<I>;
   constructor({ getController, updateInput, onInit }: {
-    onInit?: (hook: WFCollectionCacheRecord<I, O, Type>) => void;
+    onInit?: (hook: WFCollectionCacheRecord<I, O>) => void;
     getController: (input: z.infer<I>) => [CacheApi, Idx[] | "*"];
     updateInput: (
       input: z.infer<I>,
@@ -77,18 +76,23 @@ export class WFCollectionCacheRecord<
   private outputFactory(): Record<Idx, Value<O>> {
     return {};
   }
-  protected override _getCacheApi(_context: F.Context, input: z.infer<I>): Cache<I, O> {
+  protected override _getCacheApi(_context: F.Context<F.Func<I, O, "AsyncFunc">>, input: z.infer<I>): Cache<I, O> {
     const [controller, ids] = this.getController(input);
     return [controller, input, ids];
   }
-  protected override _getData(context: F.Context, cache: Cache<I, O>): T.PPromise<void> {
+  protected override _getData(context: F.Context<F.Func<I, O, "AsyncFunc">>, cache: Cache<I, O>): T.PPromise<void> {
     if (cache[iIds] === "*") {
       return cache[iController]
         .readHashFields<Record<Idx, Value<O>>>(context, { fields: "*" })
         .$then(({ $, ...result }) => {
           let value = this.outputFactory();
           for (const key in result) {
-            value[key] = result[key];
+            const res = this.func.output.valueSchema.safeParse(result[key], { path: [this.func.refString("Cache:" + key)] });
+            if (res.success) {
+              value[key] = result[key];
+            } else {
+              $ = undefined;
+            }
           }
           value = this.func.output.parse(value);
           cache[iOutput] = value;
@@ -106,16 +110,20 @@ export class WFCollectionCacheRecord<
       return cache[iController]
         .readHashFields<z.infer<O>>(context, { fields: cache[iIds] })
         .$then((result) => {
-          let value = this.outputFactory();
+          const value = this.outputFactory();
           const notFound: Idx[] = [];
           for (const key of cache[iIds]) {
             if (result[key] === undefined) {
               notFound.push(key);
             } else {
-              value[key] = this.func.output.valueSchema.parse(result[key]);
+              const res = this.func.output.valueSchema.safeParse(result[key], { path: [this.func.refString("Cache:" + key)] });
+              if (res.success) {
+                value[key] = res.data;
+              } else {
+                notFound.push(key);
+              }
             }
           }
-          value = this.func.output.parse(value);
           cache[iOutput] = value;
           if (notFound.length) {
             cache[iInput] = this.updateInput(
@@ -134,10 +142,10 @@ export class WFCollectionCacheRecord<
     if (cache[iIds].length) return true;
     return false;
   }
-  protected override _updatedInput(_context: F.Context, cache: Cache<I, O>): z.infer<I> {
+  protected override _updatedInput(_context: F.Context<F.Func<I, O, "AsyncFunc">>, cache: Cache<I, O>): z.infer<I> {
     return cache[iInput];
   }
-  protected override _setData(context: F.Context, cache: Cache<I, O>, output: z.infer<O>): T.PPromise<void> {
+  protected override _setData(context: F.Context<F.Func<I, O, "AsyncFunc">>, cache: Cache<I, O>, output: z.infer<O>): T.PPromise<void> {
     const out: Record<Idx, Value<O>> = cache[iOutput] ??= this.outputFactory();
     for (const [key, value] of Object.entries(output)) {
       out[key] = value;
@@ -150,7 +158,7 @@ export class WFCollectionCacheRecord<
     }
     return cache[iOutput];
   }
-  protected override _delCache(context: F.Context, cache: Cache<I, O>): T.PPromise<void> {
+  protected override _delCache(context: F.Context<F.Func<I, O, "AsyncFunc">>, cache: Cache<I, O>): T.PPromise<void> {
     if (cache[iIds] === "*") {
       return cache[iController].removeHashFields(context, { fields: "*" });
     } else {

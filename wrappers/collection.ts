@@ -1,15 +1,15 @@
 import type { F } from "@panth977/functions";
-import { type AllowedTypes, WFGenericCache } from "./_helper.ts";
+import { WFGenericCache } from "./_helper.ts";
 import type z from "zod";
 import type { CacheApi } from "../exports.ts";
 import { T } from "@panth977/tools";
 
-type Output = T.zPreIndexedStructure<any, any>;
+type Output = T.zPreIndexedStructure<z.ZodType, z.ZodType>;
 type Cache<I extends z.ZodType, O extends Output> = [
   CacheApi,
   z.infer<I>,
   Idx<O>[] | "*",
-  ...([z.infer<O>] | [])
+  ...([z.infer<O>] | []),
 ];
 const iController = 0;
 const iInput = 1;
@@ -56,27 +56,26 @@ type Idx<O extends Output> = ReturnType<z.infer<O>["getIndexs"]>[number];
 export class WFCollectionCache<
   I extends F.FuncInput,
   O extends Output,
-  Type extends AllowedTypes
-> extends WFGenericCache<Cache<I, O>, I, O, Type> {
+> extends WFGenericCache<Cache<I, O>, I, O> {
   protected readonly getController: (
-    input: z.infer<I>
+    input: z.infer<I>,
   ) => [CacheApi, Idx<O>[] | "*"];
   protected readonly updateInput: (
     input: z.infer<I>,
     notFoundIds: Idx<O>[] | "*",
-    found: Idx<O>[]
+    found: Idx<O>[],
   ) => z.infer<I>;
   constructor({
     getController,
     updateInput,
     onInit,
   }: {
-    onInit?: (hook: WFCollectionCache<I, O, Type>) => void;
+    onInit?: (hook: WFCollectionCache<I, O>) => void;
     getController: (input: z.infer<I>) => [CacheApi, Idx<O>[] | "*"];
     updateInput: (
       input: z.infer<I>,
       notFoundIds: Idx<O>[] | "*",
-      found: Idx<O>[]
+      found: Idx<O>[],
     ) => z.infer<I>;
   }) {
     super({ onInit } as any);
@@ -87,15 +86,15 @@ export class WFCollectionCache<
     return new T.PreIndexedStructure<any, any>(0, [], []) as z.infer<O>;
   }
   protected override _getCacheApi(
-    _context: F.Context,
-    input: z.infer<I>
+    _context: F.Context<F.Func<I, O, "AsyncFunc">>,
+    input: z.infer<I>,
   ): Cache<I, O> {
     const [controller, ids] = this.getController(input);
     return [controller, input, ids];
   }
   protected override _getData(
-    context: F.Context,
-    cache: Cache<I, O>
+    context: F.Context<F.Func<I, O, "AsyncFunc">>,
+    cache: Cache<I, O>,
   ): T.PPromise<void> {
     if (cache[iIds] === "*") {
       return cache[iController]
@@ -103,11 +102,15 @@ export class WFCollectionCache<
           fields: "*",
         })
         .$then(({ $, ...result }) => {
-          let value = this.outputFactory();
+          const value = this.outputFactory();
           for (const key in result) {
-            value.add(key, result[key]);
+            const res = this.func.output.value.safeParse(result[key], { path: [this.func.refString("Cache:" + key)] });
+            if (res.success) {
+              value.add(key, res.data);
+            } else {
+              $ = undefined;
+            }
           }
-          value = this.func.output.parse(value);
           cache[iOutput] = value;
           if ($) {
             cache[iIds] = [];
@@ -115,7 +118,7 @@ export class WFCollectionCache<
             cache[iInput] = this.updateInput(
               cache[iInput],
               "*",
-              value.getIndexs()
+              value.getIndexs(),
             );
             cache[iIds] = "*";
           }
@@ -123,7 +126,7 @@ export class WFCollectionCache<
     } else {
       if (cache[iIds].includes("$")) {
         return T.PPromise.reject(
-          new Error("Cannot use $ in ids, it is a reserved keyword")
+          new Error("Cannot use $ in ids, it is a reserved keyword"),
         );
       }
       return cache[iController]
@@ -131,22 +134,26 @@ export class WFCollectionCache<
           fields: cache[iIds],
         })
         .$then((result) => {
-          let value = this.outputFactory();
+          const value = this.outputFactory();
           const notFound = [];
           for (const key of cache[iIds]) {
             if (result[key] === undefined) {
               notFound.push(key);
             } else {
-              value.add(key, this.func.output.value.parse(result[key]));
+              const res = this.func.output.value.safeParse(result[key], { path: [this.func.refString("Cache:" + key)] });
+              if (res.success) {
+                value.add(key, res.data);
+              } else {
+                notFound.push(key);
+              }
             }
           }
-          value = this.func.output.parse(value);
           cache[iOutput] = value;
           if (notFound.length) {
             cache[iInput] = this.updateInput(
               cache[iInput],
               notFound,
-              value.getIndexs()
+              value.getIndexs(),
             );
             cache[iIds] = notFound;
           } else {
@@ -160,15 +167,15 @@ export class WFCollectionCache<
     return false;
   }
   protected override _updatedInput(
-    _context: F.Context,
-    cache: Cache<I, O>
+    _context: F.Context<F.Func<I, O, "AsyncFunc">>,
+    cache: Cache<I, O>,
   ): z.infer<I> {
     return cache[iInput];
   }
   protected override _setData(
-    context: F.Context,
+    context: F.Context<F.Func<I, O, "AsyncFunc">>,
     cache: Cache<I, O>,
-    output: z.infer<O>
+    output: z.infer<O>,
   ): T.PPromise<void> {
     cache[iOutput] ??= this.outputFactory();
     for (const [key, value] of output) {
@@ -185,8 +192,8 @@ export class WFCollectionCache<
     return cache[iOutput];
   }
   protected override _delCache(
-    context: F.Context,
-    cache: Cache<I, O>
+    context: F.Context<F.Func<I, O, "AsyncFunc">>,
+    cache: Cache<I, O>,
   ): T.PPromise<void> {
     if (cache[iIds] === "*") {
       return cache[iController].removeHashFields(context, { fields: "*" });
