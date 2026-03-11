@@ -72,7 +72,7 @@ export abstract class WFGenericCache<
     input: z.infer<I>,
   ): T.PPromise<z.infer<O>> {
     const cache = this._getCacheApi(context, input);
-    return this._getData(context, cache).map(() => {
+    return this._getData(context, cache).$then(() => {
       if (!this._shouldInvoke(cache)) {
         return T.PPromise.resolve(this._convertCache(cache));
       }

@@ -73,7 +73,7 @@ export class WFObjectCache<
     });
   }
   protected override _shouldInvoke(cache: Cache<I, O>): boolean {
-    if (cache.length) return true;
+    if (!cache[iOutput]) return true;
     return false;
   }
   protected override _updatedInput(

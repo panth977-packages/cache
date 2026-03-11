@@ -156,7 +156,7 @@ export class WFCollectionCache<
     }
   }
   protected override _shouldInvoke(cache: Cache<I, O>): boolean {
-    if (cache.length) return true;
+    if (cache[iIds].length) return true;
     return false;
   }
   protected override _updatedInput(

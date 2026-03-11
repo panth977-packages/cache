@@ -131,7 +131,7 @@ export class WFCollectionCacheRecord<
     }
   }
   protected override _shouldInvoke(cache: Cache<I, O>): boolean {
-    if (cache.length) return true;
+    if (cache[iIds].length) return true;
     return false;
   }
   protected override _updatedInput(_context: F.Context, cache: Cache<I, O>): z.infer<I> {
