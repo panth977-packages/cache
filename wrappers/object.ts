@@ -65,7 +65,7 @@ export class WFObjectCache<
     context: F.Context<F.Func<I, O, "AsyncFunc">>,
     cache: Cache<I, O>,
   ): T.PPromise<void> {
-    return cache[iController].readKey<z.infer<O>>(context, {}).$then((data) => {
+    return cache[iController].readKey<z.infer<O>>(context, {}).then((data) => {
       if (data === undefined) return;
       const value = this.func.output.safeParse(data, { path: [this.func.refString("Cache")] });
       if (value.success) cache[iOutput] = value.data;

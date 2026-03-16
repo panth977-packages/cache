@@ -84,7 +84,7 @@ export class WFCollectionCacheRecord<
     if (cache[iIds] === "*") {
       return cache[iController]
         .readHashFields<Record<Idx, Value<O>>>(context, { fields: "*" })
-        .$then(({ $, ...result }) => {
+        .then(({ $, ...result }) => {
           let value = this.outputFactory();
           for (const key in result) {
             const res = this.func.output.valueSchema.safeParse(result[key], { path: [this.func.refString("Cache:" + key)] });
@@ -109,7 +109,7 @@ export class WFCollectionCacheRecord<
       }
       return cache[iController]
         .readHashFields<z.infer<O>>(context, { fields: cache[iIds] })
-        .$then((result) => {
+        .then((result) => {
           const value = this.outputFactory();
           const notFound: Idx[] = [];
           for (const key of cache[iIds]) {

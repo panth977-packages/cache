@@ -34,7 +34,7 @@ export class CacheApi<C extends CacheController = any> {
       return T.PPromise.resolve(false) as any;
     }
     const start = Date.now();
-    return this.cache.existsKey(context, { ...opt, key }).$then((data) => {
+    return this.cache.existsKey(context, { ...opt, key }).then((data) => {
       if (this.log) {
         context.logDebug(`${this.name}.exists(${key})`, `${Date.now() - start} ms`);
       }
@@ -51,7 +51,7 @@ export class CacheApi<C extends CacheController = any> {
       return T.PPromise.resolve({}) as any;
     }
     const start = Date.now();
-    return this.cache.existsHashFields(context, { ...opt, key }).$then((data) => {
+    return this.cache.existsHashFields(context, { ...opt, key }).then((data) => {
       if (this.log) {
         context.logDebug(`${this.name}.exists(${key}, [${opt.fields}])`, `${Date.now() - start} ms`);
       }
@@ -68,7 +68,7 @@ export class CacheApi<C extends CacheController = any> {
       return T.PPromise.resolve(undefined) as any;
     }
     const start = Date.now();
-    return this.cache.readKey(context, { ...opt, key }).$then((data) => {
+    return this.cache.readKey(context, { ...opt, key }).then((data) => {
       if (this.log) {
         context.logDebug(`${this.name}.read(${key})`, `${Date.now() - start} ms`);
       }
@@ -88,7 +88,7 @@ export class CacheApi<C extends CacheController = any> {
       return T.PPromise.resolve({}) as any;
     }
     const start = Date.now();
-    return this.cache.readHashFields(context, { ...opt, key }).$then((data) => {
+    return this.cache.readHashFields(context, { ...opt, key }).then((data) => {
       if (this.log) {
         context.logDebug(`${this.name}.read(${key}, [${opt.fields}])`, `${Date.now() - start} ms`);
       }
@@ -105,7 +105,7 @@ export class CacheApi<C extends CacheController = any> {
       return T.PPromise.resolve(void 0) as any;
     }
     const start = Date.now();
-    return this.cache.writeKey(context, { ...opt, key, expiry: opt.expiry ?? this.expiry }).$then((data) => {
+    return this.cache.writeKey(context, { ...opt, key, expiry: opt.expiry ?? this.expiry }).then((data) => {
       if (this.log) {
         context.logDebug(`${this.name}.write(${key})`, `${Date.now() - start} ms`);
       }
@@ -121,7 +121,7 @@ export class CacheApi<C extends CacheController = any> {
       return T.PPromise.resolve(void 0) as any;
     }
     const start = Date.now();
-    return this.cache.writeHashFields(context, { ...opt, key, expiry: opt.expiry ?? this.expiry }).$then((data) => {
+    return this.cache.writeHashFields(context, { ...opt, key, expiry: opt.expiry ?? this.expiry }).then((data) => {
       if (this.log) {
         context.logDebug(`${this.name}.write(${key}, [${Object.keys(opt.value)}])`, `${Date.now() - start} ms`);
       }
@@ -137,7 +137,7 @@ export class CacheApi<C extends CacheController = any> {
       return T.PPromise.resolve(void 0) as any;
     }
     const start = Date.now();
-    return this.cache.removeKey(context, { ...opt, key }).$then((data) => {
+    return this.cache.removeKey(context, { ...opt, key }).then((data) => {
       if (this.log) {
         context.logMsg(`${this.name}.remove(${key})`, `${Date.now() - start} ms`);
       }
@@ -153,7 +153,7 @@ export class CacheApi<C extends CacheController = any> {
       return T.PPromise.resolve(void 0) as any;
     }
     const start = Date.now();
-    return this.cache.removeHashFields(context, { ...opt, key }).$then((data) => {
+    return this.cache.removeHashFields(context, { ...opt, key }).then((data) => {
       if (this.log) {
         context.logDebug(`${this.name}.remove(${key}, [${opt.fields}])`, `${Date.now() - start} ms`);
       }
@@ -172,7 +172,7 @@ export class CacheApi<C extends CacheController = any> {
       return T.PPromise.resolve({ allowed: true, value: 0 }) as any;
     }
     const start = Date.now();
-    return this.cache.incrementKey(context, { ...opt, key, expiry: opt.expiry ?? this.expiry }).$then((data) => {
+    return this.cache.incrementKey(context, { ...opt, key, expiry: opt.expiry ?? this.expiry }).then((data) => {
       if (this.log) {
         context.logDebug(`${this.name}.incr(${key}, [+${opt.incrBy}, <${opt.maxLimit}])`, `${Date.now() - start} ms`);
       }
@@ -192,7 +192,7 @@ export class CacheApi<C extends CacheController = any> {
       return T.PPromise.resolve({ allowed: true, value: 0 }) as any;
     }
     const start = Date.now();
-    return this.cache.incrementHashField(context, { ...opt, key, expiry: opt.expiry ?? this.expiry }).$then((data) => {
+    return this.cache.incrementHashField(context, { ...opt, key, expiry: opt.expiry ?? this.expiry }).then((data) => {
       if (this.log) {
         context.logDebug(`${this.name}.incr(${key}, [${opt.field}, +${opt.incrBy}, <${opt.maxLimit}])`, `${Date.now() - start} ms`);
       }
