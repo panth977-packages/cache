@@ -2,7 +2,6 @@ import type { F } from "@panth977/functions";
 import { WFGenericCache } from "./_helper.ts";
 import type z from "zod";
 import type { CacheApi } from "../exports.ts";
-import type { T } from "@panth977/tools";
 
 type Cache<I extends z.ZodType, O extends z.ZodType> = [
   CacheApi,
@@ -64,10 +63,12 @@ export class WFObjectCache<
   protected override _getData(
     context: F.Context<F.Func<I, O, "AsyncFunc">>,
     cache: Cache<I, O>,
-  ): T.PPromise<void> {
+  ): Promise<void> {
     return cache[iController].readKey<z.infer<O>>(context, {}).then((data) => {
       if (data === undefined) return;
-      const value = this.func.output.safeParse(data, { path: [this.func.refString("Cache")] });
+      const value = this.func.output.safeParse(data, {
+        path: [this.func.refString("Cache")],
+      });
       if (value.success) cache[iOutput] = value.data;
     });
   }
@@ -85,7 +86,7 @@ export class WFObjectCache<
     context: F.Context,
     cache: Cache<I, O>,
     output: z.infer<O>,
-  ): T.PPromise<void> {
+  ): Promise<void> {
     cache[iOutput] = output;
     return cache[iController].writeKey<z.infer<O>>(context, { value: output });
   }
@@ -98,7 +99,7 @@ export class WFObjectCache<
   protected override _delCache(
     context: F.Context,
     cache: Cache<I, O>,
-  ): T.PPromise<void> {
+  ): Promise<void> {
     return cache[iController].removeKey(context, {});
   }
 }

@@ -95,7 +95,7 @@ export class WFCollectionCache<
   protected override _getData(
     context: F.Context<F.Func<I, O, "AsyncFunc">>,
     cache: Cache<I, O>,
-  ): T.PPromise<void> {
+  ): Promise<void> {
     if (cache[iIds] === "*") {
       return cache[iController]
         .readHashFields<ReturnType<z.infer<O>["toRecord"]>>(context, {
@@ -104,7 +104,9 @@ export class WFCollectionCache<
         .then(({ $, ...result }) => {
           const value = this.outputFactory();
           for (const key in result) {
-            const res = this.func.output.value.safeParse(result[key], { path: [this.func.refString("Cache:" + key)] });
+            const res = this.func.output.value.safeParse(result[key], {
+              path: [this.func.refString("Cache:" + key)],
+            });
             if (res.success) {
               value.add(key, res.data);
             } else {
@@ -125,7 +127,7 @@ export class WFCollectionCache<
         });
     } else {
       if (cache[iIds].includes("$")) {
-        return T.PPromise.reject(
+        return Promise.reject(
           new Error("Cannot use $ in ids, it is a reserved keyword"),
         );
       }
@@ -140,7 +142,9 @@ export class WFCollectionCache<
             if (result[key] === undefined) {
               notFound.push(key);
             } else {
-              const res = this.func.output.value.safeParse(result[key], { path: [this.func.refString("Cache:" + key)] });
+              const res = this.func.output.value.safeParse(result[key], {
+                path: [this.func.refString("Cache:" + key)],
+              });
               if (res.success) {
                 value.add(key, res.data);
               } else {
@@ -176,7 +180,7 @@ export class WFCollectionCache<
     context: F.Context<F.Func<I, O, "AsyncFunc">>,
     cache: Cache<I, O>,
     output: z.infer<O>,
-  ): T.PPromise<void> {
+  ): Promise<void> {
     cache[iOutput] ??= this.outputFactory();
     for (const [key, value] of output) {
       cache[iOutput].set(key, value);
@@ -194,7 +198,7 @@ export class WFCollectionCache<
   protected override _delCache(
     context: F.Context<F.Func<I, O, "AsyncFunc">>,
     cache: Cache<I, O>,
-  ): T.PPromise<void> {
+  ): Promise<void> {
     if (cache[iIds] === "*") {
       return cache[iController].removeHashFields(context, { fields: "*" });
     } else {

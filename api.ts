@@ -1,5 +1,4 @@
 import type { F } from "@panth977/functions";
-import { T } from "@panth977/tools";
 import type { AllFields, CacheController, KEY } from "./controller.ts";
 
 /**
@@ -27,180 +26,292 @@ export class CacheApi<C extends CacheController = any> {
     return `${this.prefix}${this.separator}${key}`;
   }
   /********************* Controllers *********************/
-  existsKey(context: F.Context, opt: { key?: KEY }): T.PPromise<boolean> {
+  existsKey(context: F.Context, opt: { key?: KEY }): Promise<boolean> {
     const key = this._getKey(opt.key);
     if (!this.canExeExists()) {
       context.logDebug(`${this.name}.exists(${key})`, "Method not allowed");
-      return T.PPromise.resolve(false) as any;
+      return Promise.resolve(false) as any;
     }
     const start = Date.now();
-    return this.cache.existsKey(context, { ...opt, key }).then((data) => {
-      if (this.log) {
-        context.logDebug(`${this.name}.exists(${key})`, `${Date.now() - start} ms`);
-      }
-      return data;
-    }, (err) => {
-      this.onError(context, err);
-      return false;
-    });
+    return this.cache.existsKey(context, { ...opt, key }).then(
+      (data) => {
+        if (this.log) {
+          context.logDebug(
+            `${this.name}.exists(${key})`,
+            `${Date.now() - start} ms`,
+          );
+        }
+        return data;
+      },
+      (err) => {
+        this.onError(context, err);
+        return false;
+      },
+    );
   }
-  existsHashFields(context: F.Context, opt: { key?: KEY; fields: Array<KEY> | AllFields }): T.PPromise<Record<string, boolean>> {
+  existsHashFields(
+    context: F.Context,
+    opt: { key?: KEY; fields: Array<KEY> | AllFields },
+  ): Promise<Record<string, boolean>> {
     const key = this._getKey(opt.key);
     if (!this.canExeExists()) {
-      context.logDebug(`${this.name}.exists(${key}, [${opt.fields}])`, "Method not allowed");
-      return T.PPromise.resolve({}) as any;
+      context.logDebug(
+        `${this.name}.exists(${key}, [${opt.fields}])`,
+        "Method not allowed",
+      );
+      return Promise.resolve({}) as any;
     }
     const start = Date.now();
-    return this.cache.existsHashFields(context, { ...opt, key }).then((data) => {
-      if (this.log) {
-        context.logDebug(`${this.name}.exists(${key}, [${opt.fields}])`, `${Date.now() - start} ms`);
-      }
-      return data;
-    }, (err) => {
-      this.onError(context, err);
-      return {};
-    });
+    return this.cache.existsHashFields(context, { ...opt, key }).then(
+      (data) => {
+        if (this.log) {
+          context.logDebug(
+            `${this.name}.exists(${key}, [${opt.fields}])`,
+            `${Date.now() - start} ms`,
+          );
+        }
+        return data;
+      },
+      (err) => {
+        this.onError(context, err);
+        return {};
+      },
+    );
   }
-  readKey<T>(context: F.Context, opt: { key?: KEY }): T.PPromise<T | undefined> {
+  readKey<T>(context: F.Context, opt: { key?: KEY }): Promise<T | undefined> {
     const key = this._getKey(opt.key);
     if (!this.canExeRead()) {
       context.logDebug(`${this.name}.read(${key})`, "Method not allowed");
-      return T.PPromise.resolve(undefined) as any;
+      return Promise.resolve(undefined) as any;
     }
     const start = Date.now();
-    return this.cache.readKey(context, { ...opt, key }).then((data) => {
-      if (this.log) {
-        context.logDebug(`${this.name}.read(${key})`, `${Date.now() - start} ms`);
-      }
-      return data;
-    }, (err) => {
-      this.onError(context, err);
-      return undefined;
-    }) as any;
+    return this.cache.readKey(context, { ...opt, key }).then(
+      (data) => {
+        if (this.log) {
+          context.logDebug(
+            `${this.name}.read(${key})`,
+            `${Date.now() - start} ms`,
+          );
+        }
+        return data;
+      },
+      (err) => {
+        this.onError(context, err);
+        return undefined;
+      },
+    ) as any;
   }
   readHashFields<T extends Record<string, unknown>>(
     context: F.Context,
     opt: { key?: KEY; fields: KEY[] | AllFields },
-  ): T.PPromise<Partial<T>> {
+  ): Promise<Partial<T>> {
     const key = this._getKey(opt.key);
     if (!this.canExeRead()) {
-      context.logDebug(`${this.name}.read(${key}, [${opt.fields}])`, "Method not allowed");
-      return T.PPromise.resolve({}) as any;
+      context.logDebug(
+        `${this.name}.read(${key}, [${opt.fields}])`,
+        "Method not allowed",
+      );
+      return Promise.resolve({}) as any;
     }
     const start = Date.now();
-    return this.cache.readHashFields(context, { ...opt, key }).then((data) => {
-      if (this.log) {
-        context.logDebug(`${this.name}.read(${key}, [${opt.fields}])`, `${Date.now() - start} ms`);
-      }
-      return data;
-    }, (err) => {
-      this.onError(context, err);
-      return {};
-    }) as any;
+    return this.cache.readHashFields(context, { ...opt, key }).then(
+      (data) => {
+        if (this.log) {
+          context.logDebug(
+            `${this.name}.read(${key}, [${opt.fields}])`,
+            `${Date.now() - start} ms`,
+          );
+        }
+        return data;
+      },
+      (err) => {
+        this.onError(context, err);
+        return {};
+      },
+    ) as any;
   }
-  writeKey<T>(context: F.Context, opt: { key?: KEY; value: T; expiry?: number }): T.PPromise<void> {
+  writeKey<T>(
+    context: F.Context,
+    opt: { key?: KEY; value: T; expiry?: number },
+  ): Promise<void> {
     const key = this._getKey(opt.key);
     if (!this.canExeWrite()) {
       context.logDebug(`${this.name}.write(${key})`, "Method not allowed");
-      return T.PPromise.resolve(void 0) as any;
+      return Promise.resolve(void 0) as any;
     }
     const start = Date.now();
-    return this.cache.writeKey(context, { ...opt, key, expiry: opt.expiry ?? this.expiry }).then((data) => {
-      if (this.log) {
-        context.logDebug(`${this.name}.write(${key})`, `${Date.now() - start} ms`);
-      }
-      return data;
-    }, (err) => {
-      this.onError(context, err);
-    });
+    return this.cache
+      .writeKey(context, { ...opt, key, expiry: opt.expiry ?? this.expiry })
+      .then(
+        (data) => {
+          if (this.log) {
+            context.logDebug(
+              `${this.name}.write(${key})`,
+              `${Date.now() - start} ms`,
+            );
+          }
+          return data;
+        },
+        (err) => {
+          this.onError(context, err);
+        },
+      );
   }
-  writeHashFields<T extends Record<string, unknown>>(context: F.Context, opt: { key?: KEY; value: T; expiry?: number }): T.PPromise<void> {
+  writeHashFields<T extends Record<string, unknown>>(
+    context: F.Context,
+    opt: { key?: KEY; value: T; expiry?: number },
+  ): Promise<void> {
     const key = this._getKey(opt.key);
     if (!this.canExeWrite()) {
-      context.logDebug(`${this.name}.write(${key}, [${Object.keys(opt.value)}])`, "Method not allowed");
-      return T.PPromise.resolve(void 0) as any;
+      context.logDebug(
+        `${this.name}.write(${key}, [${Object.keys(opt.value)}])`,
+        "Method not allowed",
+      );
+      return Promise.resolve(void 0) as any;
     }
     const start = Date.now();
-    return this.cache.writeHashFields(context, { ...opt, key, expiry: opt.expiry ?? this.expiry }).then((data) => {
-      if (this.log) {
-        context.logDebug(`${this.name}.write(${key}, [${Object.keys(opt.value)}])`, `${Date.now() - start} ms`);
-      }
-      return data;
-    }, (err) => {
-      this.onError(context, err);
-    });
+    return this.cache
+      .writeHashFields(context, {
+        ...opt,
+        key,
+        expiry: opt.expiry ?? this.expiry,
+      })
+      .then(
+        (data) => {
+          if (this.log) {
+            context.logDebug(
+              `${this.name}.write(${key}, [${Object.keys(opt.value)}])`,
+              `${Date.now() - start} ms`,
+            );
+          }
+          return data;
+        },
+        (err) => {
+          this.onError(context, err);
+        },
+      );
   }
-  removeKey(context: F.Context, opt: { key?: KEY }): T.PPromise<void> {
+  removeKey(context: F.Context, opt: { key?: KEY }): Promise<void> {
     const key = this._getKey(opt.key);
     if (!this.canExeRemove()) {
       context.logDebug(`${this.name}.remove(${key})`, "Method not allowed");
-      return T.PPromise.resolve(void 0) as any;
+      return Promise.resolve(void 0) as any;
     }
     const start = Date.now();
-    return this.cache.removeKey(context, { ...opt, key }).then((data) => {
-      if (this.log) {
-        context.logMsg(`${this.name}.remove(${key})`, `${Date.now() - start} ms`);
-      }
-      return data;
-    }, (err) => {
-      this.onError(context, err);
-    });
+    return this.cache.removeKey(context, { ...opt, key }).then(
+      (data) => {
+        if (this.log) {
+          context.logMsg(
+            `${this.name}.remove(${key})`,
+            `${Date.now() - start} ms`,
+          );
+        }
+        return data;
+      },
+      (err) => {
+        this.onError(context, err);
+      },
+    );
   }
-  removeHashFields(context: F.Context, opt: { key?: KEY; fields: KEY[] | AllFields }): T.PPromise<void> {
+  removeHashFields(
+    context: F.Context,
+    opt: { key?: KEY; fields: KEY[] | AllFields },
+  ): Promise<void> {
     const key = this._getKey(opt.key);
     if (!this.canExeRemove()) {
-      context.logDebug(`${this.name}.remove(${key}, [${opt.fields}])`, "Method not allowed");
-      return T.PPromise.resolve(void 0) as any;
+      context.logDebug(
+        `${this.name}.remove(${key}, [${opt.fields}])`,
+        "Method not allowed",
+      );
+      return Promise.resolve(void 0) as any;
     }
     const start = Date.now();
-    return this.cache.removeHashFields(context, { ...opt, key }).then((data) => {
-      if (this.log) {
-        context.logDebug(`${this.name}.remove(${key}, [${opt.fields}])`, `${Date.now() - start} ms`);
-      }
-      return data;
-    }, (err) => {
-      this.onError(context, err);
-    });
+    return this.cache.removeHashFields(context, { ...opt, key }).then(
+      (data) => {
+        if (this.log) {
+          context.logDebug(
+            `${this.name}.remove(${key}, [${opt.fields}])`,
+            `${Date.now() - start} ms`,
+          );
+        }
+        return data;
+      },
+      (err) => {
+        this.onError(context, err);
+      },
+    );
   }
   incrementKey(
     context: F.Context,
     opt: { key?: KEY; incrBy: number; maxLimit: number; expiry?: number },
-  ): T.PPromise<{ allowed: boolean; value: number }> {
+  ): Promise<{ allowed: boolean; value: number }> {
     const key = this._getKey(opt.key);
     if (!this.canExeIncrement()) {
-      context.logDebug(`${this.name}.incr(${key}, [+${opt.incrBy}, <${opt.maxLimit}])`, "Method not allowed");
-      return T.PPromise.resolve({ allowed: true, value: 0 }) as any;
+      context.logDebug(
+        `${this.name}.incr(${key}, [+${opt.incrBy}, <${opt.maxLimit}])`,
+        "Method not allowed",
+      );
+      return Promise.resolve({ allowed: true, value: 0 }) as any;
     }
     const start = Date.now();
-    return this.cache.incrementKey(context, { ...opt, key, expiry: opt.expiry ?? this.expiry }).then((data) => {
-      if (this.log) {
-        context.logDebug(`${this.name}.incr(${key}, [+${opt.incrBy}, <${opt.maxLimit}])`, `${Date.now() - start} ms`);
-      }
-      return data;
-    }, (err) => {
-      this.onError(context, err);
-      return { allowed: true, value: 0 };
-    });
+    return this.cache
+      .incrementKey(context, { ...opt, key, expiry: opt.expiry ?? this.expiry })
+      .then(
+        (data) => {
+          if (this.log) {
+            context.logDebug(
+              `${this.name}.incr(${key}, [+${opt.incrBy}, <${opt.maxLimit}])`,
+              `${Date.now() - start} ms`,
+            );
+          }
+          return data;
+        },
+        (err) => {
+          this.onError(context, err);
+          return { allowed: true, value: 0 };
+        },
+      );
   }
   incrementHashField(
     context: F.Context,
-    opt: { key?: KEY; field: KEY; incrBy: number; maxLimit: number; expiry?: number },
-  ): T.PPromise<{ allowed: boolean; value: number }> {
+    opt: {
+      key?: KEY;
+      field: KEY;
+      incrBy: number;
+      maxLimit: number;
+      expiry?: number;
+    },
+  ): Promise<{ allowed: boolean; value: number }> {
     const key = this._getKey(opt.key);
     if (!this.canExeIncrement()) {
-      context.logDebug(`${this.name}.incr(${key}, [${opt.field}, +${opt.incrBy}, <${opt.maxLimit}])`, "Method not allowed");
-      return T.PPromise.resolve({ allowed: true, value: 0 }) as any;
+      context.logDebug(
+        `${this.name}.incr(${key}, [${opt.field}, +${opt.incrBy}, <${opt.maxLimit}])`,
+        "Method not allowed",
+      );
+      return Promise.resolve({ allowed: true, value: 0 }) as any;
     }
     const start = Date.now();
-    return this.cache.incrementHashField(context, { ...opt, key, expiry: opt.expiry ?? this.expiry }).then((data) => {
-      if (this.log) {
-        context.logDebug(`${this.name}.incr(${key}, [${opt.field}, +${opt.incrBy}, <${opt.maxLimit}])`, `${Date.now() - start} ms`);
-      }
-      return data;
-    }, (err) => {
-      this.onError(context, err);
-      return { allowed: true, value: 0 };
-    });
+    return this.cache
+      .incrementHashField(context, {
+        ...opt,
+        key,
+        expiry: opt.expiry ?? this.expiry,
+      })
+      .then(
+        (data) => {
+          if (this.log) {
+            context.logDebug(
+              `${this.name}.incr(${key}, [${opt.field}, +${opt.incrBy}, <${opt.maxLimit}])`,
+              `${Date.now() - start} ms`,
+            );
+          }
+          return data;
+        },
+        (err) => {
+          this.onError(context, err);
+          return { allowed: true, value: 0 };
+        },
+      );
   }
   /********************* Builds *********************/
   set(opt: {

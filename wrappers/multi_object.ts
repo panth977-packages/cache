@@ -52,9 +52,7 @@ export class WFMultiObjectCache<
   I extends F.FuncInput,
   O extends Output,
 > extends WFGenericCache<Cache<I, O>, I, O> {
-  protected readonly getController: (
-    input: z.infer<I>,
-  ) => [CacheApi, Idx<O>[]];
+  protected readonly getController: (input: z.infer<I>) => [CacheApi, Idx<O>[]];
   protected readonly updateInput: (
     input: z.infer<I>,
     notFoundIds: Idx<O>[],
@@ -85,13 +83,15 @@ export class WFMultiObjectCache<
   protected override _getData(
     context: F.Context<F.Func<I, O, "AsyncFunc">>,
     cache: Cache<I, O>,
-  ): T.PPromise<void> {
+  ): Promise<void> {
     if (cache[iIds].length === 0) {
       cache[iOutput] = this.outputFactory();
-      return T.PPromise.resolve<void>(undefined);
+      return Promise.resolve<void>(undefined);
     }
-    return T.PPromise.all(
-      cache[iIds].map((id) => cache[iController].readKey<Value<O>>(context, { key: id })),
+    return Promise.all(
+      cache[iIds].map((id) =>
+        cache[iController].readKey<Value<O>>(context, { key: id }),
+      ),
     ).then((vals) => {
       const data = this.outputFactory();
       const notFoundIds = [];
@@ -99,7 +99,9 @@ export class WFMultiObjectCache<
         if (vals[i] === undefined) {
           notFoundIds.push(cache[iIds][i]);
         } else {
-          const value = this.func.output.value.safeParse(vals[i], { path: [this.func.refString("Cache:" + cache[iIds][i])] });
+          const value = this.func.output.value.safeParse(vals[i], {
+            path: [this.func.refString("Cache:" + cache[iIds][i])],
+          });
           if (value.success) {
             data.add(cache[iIds][i], value.data);
           } else {
@@ -126,7 +128,7 @@ export class WFMultiObjectCache<
     context: F.Context<F.Func<I, O, "AsyncFunc">>,
     cache: Cache<I, O>,
     output: z.infer<O>,
-  ): T.PPromise<void> {
+  ): Promise<void> {
     cache[iOutput] ??= this.outputFactory();
     const updates = [];
     for (const [id, val] of output) {
@@ -135,7 +137,7 @@ export class WFMultiObjectCache<
         cache[iController].writeKey(context, { key: id, value: val }),
       );
     }
-    return T.PPromise.all(updates).then(VoidFn);
+    return Promise.all(updates).then(VoidFn);
   }
   protected override _convertCache(cache: Cache<I, O>): z.infer<O> {
     if (cache[iOutput] === undefined) {
@@ -146,12 +148,12 @@ export class WFMultiObjectCache<
   protected override _delCache(
     context: F.Context<F.Func<I, O, "AsyncFunc">>,
     cache: Cache<I, O>,
-  ): T.PPromise<void> {
+  ): Promise<void> {
     const [controller, ids] = this.getController(cache[iInput]);
     const updates = [];
     for (const id of ids) {
       updates.push(controller.removeKey(context, { key: id }));
     }
-    return T.PPromise.all(updates).then(VoidFn);
+    return Promise.all(updates).then(VoidFn);
   }
 }

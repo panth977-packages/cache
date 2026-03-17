@@ -1,5 +1,4 @@
 import { F } from "@panth977/functions";
-import { T } from "@panth977/tools";
 import type { z } from "zod";
 
 export abstract class WFGenericCache<
@@ -33,27 +32,38 @@ export abstract class WFGenericCache<
     context: F.Context<F.Func<I, O, "AsyncFunc">>,
     input: z.infer<I>,
   ): C;
-  protected abstract _getData(context: F.Context<F.Func<I, O, "AsyncFunc">>, cache: C): T.PPromise<void>;
+  protected abstract _getData(
+    context: F.Context<F.Func<I, O, "AsyncFunc">>,
+    cache: C,
+  ): Promise<void>;
   protected abstract _shouldInvoke(cache: C): boolean;
-  protected abstract _updatedInput(context: F.Context<F.Func<I, O, "AsyncFunc">>, cache: C): z.infer<I>;
+  protected abstract _updatedInput(
+    context: F.Context<F.Func<I, O, "AsyncFunc">>,
+    cache: C,
+  ): z.infer<I>;
   protected abstract _setData(
     context: F.Context<F.Func<I, O, "AsyncFunc">>,
     cache: C,
     output: z.infer<O>,
-  ): T.PPromise<void>;
-  protected abstract _delCache(context: F.Context<F.Func<I, O, "AsyncFunc">>, cache: C): T.PPromise<void>;
+  ): Promise<void>;
+  protected abstract _delCache(
+    context: F.Context<F.Func<I, O, "AsyncFunc">>,
+    cache: C,
+  ): Promise<void>;
   protected abstract _convertCache(cache: C): z.infer<O>;
-  get(context: F.Context, input: z.infer<I>): T.PPromise<z.infer<O>> {
+  get(context: F.Context, input: z.infer<I>): Promise<z.infer<O>> {
     const cache = this._getCacheApi(context, input);
-    return this._getData(context, cache).map(
-      this._convertCache.bind(this, cache),
-    );
+    return this._getData(context, cache).then(() => this._convertCache(cache));
   }
-  set(context: F.Context, input: z.infer<I>, output: z.infer<O>): T.PPromise<void> {
+  set(
+    context: F.Context,
+    input: z.infer<I>,
+    output: z.infer<O>,
+  ): Promise<void> {
     const cache = this._getCacheApi(context, input);
     return this._setData(context, cache, output);
   }
-  del(context: F.Context, input: z.infer<I>): T.PPromise<void> {
+  del(context: F.Context, input: z.infer<I>): Promise<void> {
     const cache = this._getCacheApi(context, input);
     return this._delCache(context, cache);
   }
@@ -61,11 +71,11 @@ export abstract class WFGenericCache<
     invokeStack: F.FuncInvokeStack<I, O, "AsyncFunc">,
     context: F.Context<F.Func<I, O, "AsyncFunc">>,
     input: z.infer<I>,
-  ): T.PPromise<z.infer<O>> {
+  ): Promise<z.infer<O>> {
     const cache = this._getCacheApi(context, input);
     return this._getData(context, cache).then(() => {
       if (!this._shouldInvoke(cache)) {
-        return T.PPromise.resolve(this._convertCache(cache));
+        return Promise.resolve(this._convertCache(cache));
       }
       input = this._updatedInput(context, cache);
       const result = invokeStack.$(context, input).then((output) => {
