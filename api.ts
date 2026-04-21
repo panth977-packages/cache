@@ -15,31 +15,37 @@ export class CacheApi<C extends CacheController = any> {
     readonly mode: "read-write" | "readonly" | "writeonly" | "ignore",
     readonly log: boolean,
     protected onError: (context: F.Context, err: unknown) => void,
-  ) {
-    this.name = name;
-    this.separator = separator;
-    this.expiry = expiry;
-    this.timeout = timeout;
-    this.mode = mode;
-    this.log = log;
-  }
+  ) {}
   protected _getKey(key: string | number | null | undefined): string {
     if (key === "" || key === null || key === undefined) return this.prefix;
     return `${this.prefix}${this.separator}${key}`;
   }
-  protected _withTimeout<T>(p: Promise<T>, timeout: number, label: string): Promise<T> {
+  protected _withTimeout<T>(context: F.Context, p: Promise<T>, timeout: number, label: string): Promise<T> {
     if (timeout <= 0) return p;
     return new Promise<T>((resolve, reject) => {
+      let timeoutExit = false;
+      const start = Date.now();
       const handle = setTimeout(
-        () => reject(new Error(`${label} timed out after ${timeout} ms`)),
+        () => {
+          reject(new Error(`${label} timed out after ${timeout} ms`));
+          timeoutExit = true;
+        },
         timeout,
       );
       p.then(
         (v) => {
+          if (timeoutExit) {
+            context.logDebug(`${label} ${Date.now() - start}ms, late resolve:`, null);
+            return;
+          }
           clearTimeout(handle);
           resolve(v);
         },
         (e) => {
+          if (timeoutExit) {
+            context.logError(`${label} ${Date.now() - start}ms, late error:`, e);
+            return;
+          }
           clearTimeout(handle);
           reject(e);
         },
@@ -108,6 +114,7 @@ export class CacheApi<C extends CacheController = any> {
     const start = Date.now();
     const label = `${this.name}.read(${key})`;
     return this._withTimeout(
+      context,
       this.cache.readKey(context, { ...opt, key }),
       opt.timeout ?? this.timeout,
       label,
@@ -139,6 +146,7 @@ export class CacheApi<C extends CacheController = any> {
     const start = Date.now();
     const label = `${this.name}.read(${key}, [${opt.fields}])`;
     return this._withTimeout(
+      context,
       this.cache.readHashFields(context, { ...opt, key }),
       opt.timeout ?? this.timeout,
       label,
