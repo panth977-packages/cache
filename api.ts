@@ -11,6 +11,7 @@ export class CacheApi<C extends CacheController = any> {
     readonly separator: string,
     readonly prefix: string,
     readonly expiry: number,
+    readonly timeout: number,
     readonly mode: "read-write" | "readonly" | "writeonly" | "ignore",
     readonly log: boolean,
     protected onError: (context: F.Context, err: unknown) => void,
@@ -18,12 +19,32 @@ export class CacheApi<C extends CacheController = any> {
     this.name = name;
     this.separator = separator;
     this.expiry = expiry;
+    this.timeout = timeout;
     this.mode = mode;
     this.log = log;
   }
   protected _getKey(key: string | number | null | undefined): string {
     if (key === "" || key === null || key === undefined) return this.prefix;
     return `${this.prefix}${this.separator}${key}`;
+  }
+  protected _withTimeout<T>(p: Promise<T>, timeout: number, label: string): Promise<T> {
+    if (timeout <= 0) return p;
+    return new Promise<T>((resolve, reject) => {
+      const handle = setTimeout(
+        () => reject(new Error(`${label} timed out after ${timeout} ms`)),
+        timeout,
+      );
+      p.then(
+        (v) => {
+          clearTimeout(handle);
+          resolve(v);
+        },
+        (e) => {
+          clearTimeout(handle);
+          reject(e);
+        },
+      );
+    });
   }
   /********************* Controllers *********************/
   existsKey(context: F.Context, opt: { key?: KEY }): Promise<boolean> {
@@ -78,20 +99,22 @@ export class CacheApi<C extends CacheController = any> {
       },
     );
   }
-  readKey<T>(context: F.Context, opt: { key?: KEY }): Promise<T | undefined> {
+  readKey<T>(context: F.Context, opt: { key?: KEY; timeout?: number }): Promise<T | undefined> {
     const key = this._getKey(opt.key);
     if (!this.canExeRead()) {
       context.logDebug(`${this.name}.read(${key})`, "Method not allowed");
       return Promise.resolve(undefined) as any;
     }
     const start = Date.now();
-    return this.cache.readKey(context, { ...opt, key }).then(
+    const label = `${this.name}.read(${key})`;
+    return this._withTimeout(
+      this.cache.readKey(context, { ...opt, key }),
+      opt.timeout ?? this.timeout,
+      label,
+    ).then(
       (data) => {
         if (this.log) {
-          context.logDebug(
-            `${this.name}.read(${key})`,
-            `${Date.now() - start} ms`,
-          );
+          context.logDebug(label, `${Date.now() - start} ms`);
         }
         return data;
       },
@@ -103,7 +126,7 @@ export class CacheApi<C extends CacheController = any> {
   }
   readHashFields<T extends Record<string, unknown>>(
     context: F.Context,
-    opt: { key?: KEY; fields: KEY[] | AllFields },
+    opt: { key?: KEY; fields: KEY[] | AllFields; timeout?: number },
   ): Promise<Partial<T>> {
     const key = this._getKey(opt.key);
     if (!this.canExeRead()) {
@@ -114,13 +137,15 @@ export class CacheApi<C extends CacheController = any> {
       return Promise.resolve({}) as any;
     }
     const start = Date.now();
-    return this.cache.readHashFields(context, { ...opt, key }).then(
+    const label = `${this.name}.read(${key}, [${opt.fields}])`;
+    return this._withTimeout(
+      this.cache.readHashFields(context, { ...opt, key }),
+      opt.timeout ?? this.timeout,
+      label,
+    ).then(
       (data) => {
         if (this.log) {
-          context.logDebug(
-            `${this.name}.read(${key}, [${opt.fields}])`,
-            `${Date.now() - start} ms`,
-          );
+          context.logDebug(label, `${Date.now() - start} ms`);
         }
         return data;
       },
@@ -317,6 +342,7 @@ export class CacheApi<C extends CacheController = any> {
   set(opt: {
     mode?: "read-write" | "readonly" | "writeonly" | "ignore";
     expiry?: number;
+    timeout?: number;
     log?: boolean;
   }): CacheApi<C> {
     return new CacheApi(
@@ -325,6 +351,7 @@ export class CacheApi<C extends CacheController = any> {
       this.separator,
       this.prefix,
       opt.expiry ?? this.expiry,
+      opt.timeout ?? this.timeout,
       opt.mode ?? this.mode,
       opt.log ?? this.log,
       this.onError,
@@ -337,6 +364,7 @@ export class CacheApi<C extends CacheController = any> {
       this.separator,
       `${this.prefix}${this.separator}${prefix.join(this.separator)}`,
       this.expiry,
+      this.timeout,
       this.mode,
       this.log,
       this.onError,
